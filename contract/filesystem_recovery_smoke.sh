@@ -16,25 +16,25 @@ root.mkdir(); (root/'.nift').mkdir(); (root/'content').mkdir(); (root/'templates
 (root/'templates/template.html').write_text('<main>@content</main>\n')
 (root/'content/index.html').write_text('<p>BASE</p>\n')
 nift=os.environ['NIFT_BIN']
-subprocess.run([nift,'build-all'],cwd=root,check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+subprocess.run([nift,'build','--all'],cwd=root,check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
 # Force the first pass inside this long-running process to write public/. The
 # regression only appears after that process has already scanned the parent.
 (root/'content/index.html').write_text('<p>FIRST-PASS</p>\n')
 
-proc=subprocess.Popen([nift,'build-auto'],cwd=root,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+proc=subprocess.Popen([nift,'build','--auto'],cwd=root,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 try:
     output=root/'public/index.html'; deadline=time.monotonic()+8
     while time.monotonic()<deadline and proc.poll() is None:
         if output.exists() and 'FIRST-PASS' in output.read_text(): break
         time.sleep(.05)
     else:
-        if proc.poll() is not None: raise SystemExit('build-auto exited before initial write pass')
-        raise SystemExit('build-auto did not complete initial write pass')
+        if proc.poll() is not None: raise SystemExit('build --auto exited before initial write pass')
+        raise SystemExit('build --auto did not complete initial write pass')
 
     stale=root/'public/mid-session.html.nift-tmp-99999999-101'
     stale.write_text('stale\n')
     time.sleep(.35)
-    if not stale.exists(): raise SystemExit('idle build-auto removed stale temp without relevant filesystem activity')
+    if not stale.exists(): raise SystemExit('idle build --auto removed stale temp without relevant filesystem activity')
 
     (root/'content/index.html').write_text('<p>CHANGED</p>\n')
     deadline=time.monotonic()+8
@@ -43,7 +43,7 @@ try:
         if output.exists() and 'CHANGED' in output.read_text() and not stale.exists(): break
         time.sleep(.05)
     else:
-        if proc.poll() is not None: raise SystemExit('build-auto exited during recovery pass')
+        if proc.poll() is not None: raise SystemExit('build --auto exited during recovery pass')
         raise SystemExit('mid-session stale temp was not recovered by subsequent relevant build activity')
 
     # A live-owner temp must remain protected during a later recovery epoch.

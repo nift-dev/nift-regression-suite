@@ -23,13 +23,13 @@ expect_file_not_contains(){
 
 expect_build_success(){
   local dir="$1" label="$2"
-  if (cd "$dir" && "$NIFT_BIN" build-all >build.log 2>&1); then pass
+  if (cd "$dir" && "$NIFT_BIN" build --all >build.log 2>&1); then pass
   else fail "$label"; [[ -f "$dir/build.log" ]] && sed -n '1,80p' "$dir/build.log" >&2; fi
 }
 
 expect_build_failure(){
   local dir="$1" expected="$2" label="$3"
-  if (cd "$dir" && "$NIFT_BIN" build-all >build.log 2>&1); then
+  if (cd "$dir" && "$NIFT_BIN" build --all >build.log 2>&1); then
     fail "$label (unexpected success)"
   elif grep -Fq -- "$expected" "$dir/build.log"; then pass
   else fail "$label (missing diagnostic: $expected)"; sed -n '1,80p' "$dir/build.log" >&2; fi
@@ -130,7 +130,7 @@ OUTER2=@input("partials/$[item.file].html")
 EMPTY=<$[selector.empty]>
 @content
 EOF
-if (cd "$P" && NIFT_PARAMETER_VALUE='ENV-VALUE' "$NIFT_BIN" build-all >build.log 2>&1); then pass
+if (cd "$P" && NIFT_PARAMETER_VALUE='ENV-VALUE' "$NIFT_BIN" build --all >build.log 2>&1); then pass
 else fail 'textual directives accept parameter interpolation'; sed -n '1,100p' "$P/build.log" >&2; fi
 OUT="$P/public/index.html"
 for expected in \
@@ -190,7 +190,7 @@ cat >"$P/templates/template.html" <<'EOF'
 @dep("data/$[selector.value.txt")
 <p>AFTER-MALFORMED</p>
 EOF
-if (cd "$P" && "$NIFT_BIN" build-all >build.log 2>&1); then
+if (cd "$P" && "$NIFT_BIN" build --all >build.log 2>&1); then
   fail 'malformed interpolation unexpectedly succeeds'
 else pass; fi
 
@@ -217,11 +217,11 @@ for mode in modified hash hybrid; do
 @input("partials/$[selector.partial].html")
 @content
 EOF
-  if (cd "$P" && "$NIFT_BIN" build-all >/dev/null 2>&1); then
+  if (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); then
     expect_file_contains "$P/public/index.html" A "$mode dynamic input initially selects A"
     sleep 1
     printf '{"partial":"b"}\n' >"$P/data/selector.json"
-    if (cd "$P" && "$NIFT_BIN" build-updated >/dev/null 2>&1); then pass; else fail "$mode selector A -> B rebuild succeeds"; fi
+    if (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1); then pass; else fail "$mode selector A -> B rebuild succeeds"; fi
     expect_file_contains "$P/public/index.html" B "$mode dynamic input switches to B"
     expect_file_contains "$P/.nift/public/index.info.json" 'templates/partials/b.html' "$mode records B dependency"
     expect_file_not_contains "$P/.nift/public/index.info.json" 'templates/partials/a.html' "$mode removes stale A dependency"
@@ -247,9 +247,9 @@ cat >"$P/templates/template.html" <<'EOF'
 @dep("data/$[selector.dep].txt")
 @content
 EOF
-if (cd "$P" && "$NIFT_BIN" build-all >/dev/null 2>&1); then
+if (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); then
   sleep 1; printf '{"dep":"b"}\n' >"$P/data/selector.json"
-  (cd "$P" && "$NIFT_BIN" build-updated >/dev/null 2>&1)
+  (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1)
   expect_file_contains "$P/.nift/public/index.info.json" 'data/b.txt' 'dynamic dep records B'
   expect_file_not_contains "$P/.nift/public/index.info.json" 'data/a.txt' 'dynamic dep removes A'
 else fail 'dynamic dep baseline build succeeds'; fi
@@ -264,9 +264,9 @@ cat >"$P/templates/template.html" <<'EOF'
 <script src="@pathto('public/assets/$[selector.asset].js')"></script>
 @content
 EOF
-if (cd "$P" && "$NIFT_BIN" build-all >/dev/null 2>&1); then
+if (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); then
   sleep 1; printf '{"asset":"b"}\n' >"$P/data/selector.json"
-  (cd "$P" && "$NIFT_BIN" build-updated >/dev/null 2>&1)
+  (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1)
   expect_file_contains "$P/.nift/public/index.info.json" 'public/assets/b.js' 'dynamic requirement records B'
   expect_file_not_contains "$P/.nift/public/index.info.json" 'public/assets/a.js' 'dynamic requirement removes A'
   sleep 1; printf changed >"$P/public/assets/b.js"
@@ -288,9 +288,9 @@ cat >"$P/templates/template.html" <<'EOF'
 $[selected.value]
 @content
 EOF
-if (cd "$P" && "$NIFT_BIN" build-all >/dev/null 2>&1); then
+if (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); then
   sleep 1; printf '{"source":"b"}\n' >"$P/data/selector.json"
-  (cd "$P" && "$NIFT_BIN" build-updated >/dev/null 2>&1)
+  (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1)
   expect_file_contains "$P/public/index.html" B 'dynamic JSON switches to B'
   expect_file_contains "$P/.nift/public/index.info.json" 'data/b.json' 'dynamic JSON records B'
   expect_file_not_contains "$P/.nift/public/index.info.json" 'data/a.json' 'dynamic JSON removes A'
@@ -307,15 +307,15 @@ cat >"$P/templates/template.html" <<'EOF'
 @input("partials/$[selector.partial].html")
 @content
 EOF
-if (cd "$P" && "$NIFT_BIN" build-all >/dev/null 2>&1); then
+if (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); then
   cp "$P/public/index.html" "$P/output.before"
   cp "$P/.nift/public/index.info.json" "$P/info.before"
   sleep 1; printf '{"partial":"missing"}\n' >"$P/data/selector.json"
-  if (cd "$P" && "$NIFT_BIN" build-updated >failed.log 2>&1); then fail 'missing dynamic input unexpectedly succeeds'; else pass; fi
+  if (cd "$P" && "$NIFT_BIN" build >failed.log 2>&1); then fail 'missing dynamic input unexpectedly succeeds'; else pass; fi
   if cmp -s "$P/output.before" "$P/public/index.html"; then pass; else fail 'failed dynamic build changed last good output'; fi
   if cmp -s "$P/info.before" "$P/.nift/public/index.info.json"; then pass; else fail 'failed dynamic build changed last good metadata'; fi
   printf '{"partial":"b"}\n' >"$P/data/selector.json"
-  if (cd "$P" && "$NIFT_BIN" build-updated >/dev/null 2>&1); then pass; else fail 'repaired dynamic input does not recover'; fi
+  if (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1); then pass; else fail 'repaired dynamic input does not recover'; fi
   expect_file_contains "$P/public/index.html" GOOD-B 'repaired dynamic input emits B'
 else fail 'failure-recovery baseline build succeeds'; fi
 
