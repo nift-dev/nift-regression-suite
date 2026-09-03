@@ -1,7 +1,7 @@
 # Nift regression-suite handover
 
 This repository is the canonical implementation-independent behavioral contract
-for the Nift v4 family. The current development executable targets Nift 4.0.7; it
+for the Nift v4 family. The current development executable targets Nift 4.0.9; it
 is not an implementation test directory extracted from the C++ tree.
 
 ## Authority and purpose
@@ -31,10 +31,13 @@ history; this repository owns black-box contract methodology.
   institutional context, including failure families, parameter
   interpolation coverage, and production-readiness responsibilities.
 
-The current runner contains the historical/ruthless module plus 19 focused
-contract modules, for 22 modules total. The focused layer now includes the v4.0.3
+The current runner contains the historical/ruthless module plus 20 focused
+contract modules, for 23 modules total. The focused layer now includes the v4.0.3
 pagination and composable collection-operation contracts, the v4.0.4 long-running
-filesystem-recovery contract, and the 4.0.2 initializer/platform-target contract. Treat counts as checkpoint facts, not the
+filesystem-recovery contract, the 4.0.2 initializer/platform-target contract, and
+the v4.0.9 unreadable-source contract (unreadable content/@input/template must
+fail with a "not readable" diagnostic and preserve the last successful output).
+Treat counts as checkpoint facts, not the
 quality claim.
 
 ## Running
