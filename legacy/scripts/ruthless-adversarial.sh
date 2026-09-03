@@ -392,6 +392,7 @@ EOF
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1)
 check contains "$P/.nift/public/index.info.json" '"public/assets/a.txt"' 'selected @if pathto did not become req'
 check not_contains "$P/.nift/public/index.info.json" '"public/assets/b.txt"' 'skipped @if pathto incorrectly became req'
+sleep 0.02
 printf '{"choice":"b"}\n' >"$P/data/site.json"; (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1)
 check contains "$P/.nift/public/index.info.json" '"public/assets/b.txt"' 'data-driven branch change did not replace req'
 check not_contains "$P/.nift/public/index.info.json" '"public/assets/a.txt"' 'old req survived branch change'
