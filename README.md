@@ -1,7 +1,7 @@
 # Nift v4 Contract Regression Suite
 
 This is the canonical **implementation-independent** regression suite for the
-Nift v4 contract. The current development executable targets Nift 4.0.7.
+Nift v4 contract. The current development executable targets Nift 4.0.10.
 
 It does **not** compile or include Nift implementation source. Point it at any
 candidate Nift executable:
