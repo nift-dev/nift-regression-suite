@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: nift-dev/nift
-          ref: ${{ github.event.inputs.nift-sha || 'main' }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.nift-sha || 'main' }}
           path: nift
       - name: Build Nift
         run: make -C nift -j2 nift
