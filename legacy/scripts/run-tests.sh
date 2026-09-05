@@ -119,7 +119,7 @@ run_test contains public/escaping.html 'META_UNKNOWN=$[not-real]' 'unknown metad
 
 # Comments/current parser behavior.
 run_test not_contains public/comments.html 'raw single line removed too' '@// raw single-line comment removed'
-run_test not_contains public/comments.html 'raw multiline @ent' '<#-- raw multiline comment removed without processing'
+run_test not_contains public/comments.html 'raw multiline @ent' '@/* raw multiline comment removed without processing'
 run_test contains public/comments.html 'ordinary slash-star text &excl;' 'ordinary /* text is not a Nift comment and is still parsed normally'
 
 # pre behavior.
@@ -229,7 +229,7 @@ expect_failure 'content-not-used' 'must execute exactly one @content' $'template
 expect_failure 'content-used-twice' 'may be executed exactly once' $'@content\n@content\n' 'REPEAT-MARKER\n'
 expect_failure 'unclosed-pre' 'has no following </pre> close tag' $'<pre>\n@content\n'
 expect_failure 'orphan-pre-close' 'close tag has no preceding' $'</pre>\n@content\n'
-expect_failure 'unclosed-raw-comment' "open comment '<#--' has no close '--#>'" $'<#-- never closes\n@content\n'
+expect_failure 'unclosed-raw-comment' "open comment '@/*' has no close '*/'" $'@/* never closes\n@content\n'
 
 
 # Surrounding formatting whitespace should not become part of a quoted parameter.
