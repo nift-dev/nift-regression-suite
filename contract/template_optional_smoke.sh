@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-NIFT_BIN="${NIFT_BIN:-nift}"
-TMP="$(mktemp -d "${TMPDIR:-/tmp}/nift-contract-template-optional.XXXXXX")"
+NIFT_BIN="${NIFT_BIN:-$(pwd)/nift}"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/nift-template-optional.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
 P="$TMP/project"
@@ -16,7 +16,7 @@ cat >"$P/content/index.html" <<'EOF'
 @if(true){<main>$[title]</main>}
 EOF
 
-# Omission parses content as the top-level Nift source, not as a literal copy.
+# Omission makes content the parsed top-level Nift source.
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null)
 grep -Fq '<main>Home</main>' "$P/public/index.html"
 python3 -S - "$P/.nift/public/index.info.json" <<'PY'
@@ -26,7 +26,7 @@ assert d["template"] == "", d
 assert d["dependencies"] == ["content/index.html"], d
 PY
 
-# Adding a template establishes that dependency and preserves @content behavior.
+# Switching to a real template adds the dependency and preserves @content.
 printf '<body>@content</body>\n' >"$P/templates/page.html"
 python3 -S - "$P/.nift/tracked.json" <<'PY'
 import json, sys
@@ -39,7 +39,7 @@ PY
 grep -Fq '<body><main>Home</main>' "$P/public/index.html"
 grep -Fq '"templates/page.html"' "$P/.nift/public/index.info.json"
 
-# Removing the template removes the old incremental relationship.
+# Switching back removes the old template relationship cleanly.
 python3 -S - "$P/.nift/tracked.json" <<'PY'
 import json, sys
 p = sys.argv[1]
@@ -64,7 +64,7 @@ PY
 (cd "$P" && "$NIFT_BIN" status >empty.log)
 ! grep -Fq 'needs rebuilding' "$P/empty.log"
 
-# New scaffolds keep ordinary CSS and JavaScript outside tracking.
+# The default scaffold keeps ordinary CSS and JavaScript outside tracking.
 S="$TMP/scaffold"
 mkdir "$S"
 (cd "$S" && "$NIFT_BIN" init >/dev/null)
@@ -80,4 +80,4 @@ test -f "$S/public/assets/js/script.js"
 test ! -e "$S/templates/template.css"
 test ! -e "$S/templates/template.js"
 
-echo "Optional tracked template contract passed"
+echo "Optional tracked template smoke test passed"

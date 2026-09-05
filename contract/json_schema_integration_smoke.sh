@@ -18,7 +18,7 @@ JSON
 # Successful validation and automatic dependency recording for data + schema.
 P="$TMP/basic"; mkproj "$P"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/items.json", data, "schemas/items.schema.json")
+@json(data, "schemas/items.schema.json", "data/items.json")
 @for(item : data.items by item.rank asc){$[loop.index]:$[item.name]
 }
 @content
@@ -44,6 +44,7 @@ if (cd "$P" && "$NIFT_BIN" build >bad-data.log 2>&1); then
   echo "schema-invalid data unexpectedly built" >&2
   exit 1
 fi
+(cd "$P" && rm -f .nift/.unfinished)
 grep -Fq 'does not satisfy schema' "$P/bad-data.log"
 grep -Fq '$.items[0].rank' "$P/bad-data.log"
 
@@ -65,7 +66,7 @@ grep -Fq 'greater than maximum' "$P/bad-schema-change.log"
 P="$TMP/lazy"; mkproj "$P"
 cat >"$P/templates/template.html" <<'EOF'
 @if(false){
-  @json("data/missing.json", never, "schemas/missing.json")
+  @json(never, "schemas/missing.json", "data/missing.json")
   $[never.x]
 }
 OK
@@ -85,7 +86,7 @@ AFTER=$[nested.name]
 @content
 EOF
 cat >"$P/templates/partials/part.html" <<'EOF'
-@json("data/item.json", nested, "schemas/item.schema.json")
+@json(nested, "schemas/item.schema.json", "data/item.json")
 IN=$[nested.name]
 EOF
 cat >"$P/data/item.json" <<'EOF'
@@ -105,15 +106,16 @@ P="$TMP/traversal"; mkproj "$P"
 printf '{}\n' >"$TMP/outside.json"
 printf '{}\n' >"$P/data/ok.json"
 printf '{}\n' >"$P/schemas/ok.json"
-printf '@json("../outside.json", data)\n@content\n' >"$P/templates/template.html"
+printf '@json(data, "../outside.json")\n@content\n' >"$P/templates/template.html"
 printf '\n' >"$P/content/index.html"
 if (cd "$P" && "$NIFT_BIN" build --all >trav-data.log 2>&1); then
   echo "json traversal unexpectedly succeeded" >&2
   exit 1
 fi
+(cd "$P" && rm -f .nift/.unfinished)
 grep -Fq 'path must stay inside the Nift project' "$P/trav-data.log"
 
-printf '@json("data/ok.json", data, "../outside.json")\n@content\n' >"$P/templates/template.html"
+printf '@json(data, "../outside.json", "data/ok.json")\n@content\n' >"$P/templates/template.html"
 if (cd "$P" && "$NIFT_BIN" build --all >trav-schema.log 2>&1); then
   echo "schema traversal unexpectedly succeeded" >&2
   exit 1

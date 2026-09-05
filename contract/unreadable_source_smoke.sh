@@ -1,114 +1,101 @@
 #!/usr/bin/env bash
-# Black-box unreadable-source contract. A tracked content file, an @input
-# file, or a template that becomes unreadable must fail the build with a clear
+# Unreadable-source contract: a tracked content file, an @input file, or a
+# template that becomes unreadable must fail the build with a clear
 # "not readable" diagnostic and must leave the previously successful output and
-# page metadata byte-identical. An empty-but-readable source remains a valid,
-# distinct state and must build successfully. These are render-time failures
-# (the read is the authority), so they preserve the last-good output.
+# page metadata byte-identical (the read is the authority; a failed read must
+# never silently render as empty content). An empty but readable source is
+# still a valid, distinct state and must build successfully.
 set -u
 NIFT_BIN="${NIFT_BIN:-$(pwd)/nift}"
-TMP="$(mktemp -d "${TMPDIR:-/tmp}/nift-ur-contract.XXXXXX")"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/nift-unreadable.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
-export NIFT_BIN TMP
 
-# On platforms where a chmod-000 file remains readable by the current user
-# (e.g. Windows), the unreadable cases cannot be exercised. The module then
-# reports an explicit skip and exits successfully; it is not a failure. Linux
-# is the evidence platform for the chmod-based cases.
-if ! python3 - <<'PY'
-import os, pathlib, tempfile, sys
-with tempfile.TemporaryDirectory() as td:
-    p = pathlib.Path(td) / "probe"
-    p.write_text("x")
-    os.chmod(p, 0)
-    try:
-        with open(p) as f: f.read()
-        sys.exit(1)  # still readable: platform cannot enforce unreadable
-    except PermissionError:
-        sys.exit(0)
-PY
-then
-  echo "unreadable-source contract SKIPPED: platform cannot enforce chmod-000 unreadability"
-  exit 0
-fi
+fail() { echo "unreadable-source FAIL: $*" >&2; exit 1; }
 
-python3 - <<'PY'
-import json, os, pathlib, subprocess, sys
-root = pathlib.Path(os.environ['TMP']) / 'project'
-nift = os.environ['NIFT_BIN']
+scaffold() {
+  local dir="$1"
+  mkdir -p "$dir/.nift" "$dir/content" "$dir/templates" "$dir/public"
+  cat >"$dir/.nift/config.json" <<'JSON'
+{"config":{"content-dir":"content/","content-ext":".html","output-dir":"public/","output-ext":".html","default-template":"templates/template.html","build-threads":1,"incremental-mode":"modified"}}
+JSON
+  cat >"$dir/.nift/tracked.json" <<'JSON'
+{"tracked":[
+  {"name":"/","title":"Home","template":"templates/template.html"}
+]}
+JSON
+  printf '<main>@content</main>\n' >"$dir/templates/template.html"
+  printf '<p>BASE</p>\n' >"$dir/content/index.html"
+  (cd "$dir" && "$NIFT_BIN" build --all >/dev/null 2>&1) || fail "base build failed"
+}
 
-def fail(msg):
-    print('unreadable-source FAIL:', msg, file=sys.stderr)
-    sys.exit(1)
+preserve_pair() {
+  local dir="$1"
+  rm -f "$TMP/out.before" "$TMP/meta.before"
+  cp "$dir/public/index.html" "$TMP/out.before"
+  cp "$dir/.nift/public/index.info.json" "$TMP/meta.before"
+}
 
-def scaffold():
-    root.mkdir()
-    (root / '.nift').mkdir(); (root / 'content').mkdir(); (root / 'templates').mkdir(); (root / 'public').mkdir()
-    (root / '.nift/config.json').write_text(json.dumps({'config': {
-        'content-dir': 'content/', 'content-ext': '.html', 'output-dir': 'public/', 'output-ext': '.html',
-        'default-template': 'templates/template.html', 'build-threads': 1, 'incremental-mode': 'modified',
-        'minify-exts': []}}))
-    (root / '.nift/tracked.json').write_text(json.dumps({'tracked': [
-        {'name': '/', 'title': 'Home', 'template': 'templates/template.html'}]}))
-    (root / 'templates/template.html').write_text('<main>@content</main>\n')
-    (root / 'content/index.html').write_text('<p>BASE</p>\n')
-    subprocess.run([nift, 'build', '--all'], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+assert_preserved() {
+  local dir="$1" label="$2"
+  cmp -s "$dir/public/index.html" "$TMP/out.before" || fail "$label changed previously successful output"
+  cmp -s "$dir/.nift/public/index.info.json" "$TMP/meta.before" || fail "$label changed page metadata"
+}
 
-def pair():
-    return (root / 'public/index.html').read_bytes(), (root / '.nift/public/index.info.json').read_bytes()
+expect_not_readable() {
+  local dir="$1" label="$2"
+  local out rc
+  out="$(cd "$dir" && "$NIFT_BIN" build --all 2>&1)"
+  rc=$?
+  [ "$rc" -ne 0 ] || fail "$label: build unexpectedly succeeded"
+  printf '%s' "$out" | grep -q "not readable" || fail "$label: missing 'not readable' diagnostic (output: $out)"
+  assert_preserved "$dir" "$label"
+  chmod 644 "$dir/$3" 2>/dev/null || true
+}
 
-def expect_not_readable(prior, label, restore):
-    p = subprocess.run([nift, 'build', '--all'], cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if p.returncode == 0:
-        fail(label + ': build unexpectedly succeeded')
-    if 'not readable' not in (p.stdout + p.stderr):
-        fail(label + ': missing "not readable" diagnostic: ' + (p.stdout + p.stderr)[:200])
-    now = pair()
-    if now != prior:
-        fail(label + ': previously successful output/metadata changed after failed build')
-    os.chmod(restore, 0o644)
+# 1. Unreadable tracked content must fail and preserve last good output.
+P="$TMP/content"
+scaffold "$P"
+printf '<p>NEW</p>\n' >"$P/content/index.html"
+preserve_pair "$P"
+chmod 000 "$P/content/index.html"
+expect_not_readable "$P" "unreadable content" "content/index.html"
 
-scaffold()
+# 2. Unreadable @input source must fail and preserve last good output.
+P="$TMP/input"
+scaffold "$P"
+printf '<head>@input("templates/head.html")</head><main>@content</main>\n' >"$P/templates/template.html"
+printf '<meta charset="utf-8">\n' >"$P/templates/head.html"
+(cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1) || fail "input base build failed"
+printf '<link>new</link>\n' >"$P/templates/head.html"
+preserve_pair "$P"
+chmod 000 "$P/templates/head.html"
+expect_not_readable "$P" "unreadable @input" "templates/head.html"
 
-# 1. Unreadable tracked content.
-prior = pair()
-(root / 'content/index.html').write_text('<p>NEW</p>\n')
-os.chmod(root / 'content/index.html', 0)
-expect_not_readable(prior, 'unreadable content', root / 'content/index.html')
+# 3. Unreadable template must fail with the template-readable diagnostic and
+#    preserve last good output (not the misleading downstream @content error).
+P="$TMP/template"
+scaffold "$P"
+printf '<section>@content</section>\n' >"$P/templates/template.html"
+(cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1) || fail "template base build failed"
+preserve_pair "$P"
+chmod 000 "$P/templates/template.html"
+out="$(cd "$P" && "$NIFT_BIN" build --all 2>&1)"; rc=$?
+[ "$rc" -ne 0 ] || fail "unreadable template: build unexpectedly succeeded"
+printf '%s' "$out" | grep -q "template file is not readable" || fail "unreadable template: wrong diagnostic (output: $out)"
+assert_preserved "$P" "unreadable template"
+chmod 644 "$P/templates/template.html"
 
-# 2. Unreadable @input source.
-(root / 'templates/template.html').write_text('<head>@input("templates/head.html")</head><main>@content</main>\n')
-(root / 'templates/head.html').write_text('<meta charset="utf-8">\n')
-subprocess.run([nift, 'build', '--all'], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-prior = pair()
-(root / 'templates/head.html').write_text('<link>new</link>\n')
-os.chmod(root / 'templates/head.html', 0)
-expect_not_readable(prior, 'unreadable @input', root / 'templates/head.html')
+# 4. Empty-but-readable and unreadable are distinct: an empty readable content
+#    file builds successfully and emits empty content; only the unreadable
+#    state fails. This pins the semantic difference that a failed read must not
+#    be conflated with an empty file.
+P="$TMP/empty-vs-unreadable"
+scaffold "$P"
+printf '' >"$P/content/index.html"
+(cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1) || fail "empty readable content must build"
+[ "$(cat "$P/public/index.html")" = "<main></main>" ] || fail "empty readable content rendered wrong (got: $(cat "$P/public/index.html"))"
+preserve_pair "$P"
+chmod 000 "$P/content/index.html"
+expect_not_readable "$P" "empty-but-unreadable must still fail" "content/index.html"
 
-# 3. Unreadable template (must give the template-readable diagnostic, not the
-#    downstream "@content exactly once" error).
-(root / 'templates/template.html').write_text('<section>@content</section>\n')
-subprocess.run([nift, 'build', '--all'], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-prior = pair()
-os.chmod(root / 'templates/template.html', 0)
-p = subprocess.run([nift, 'build', '--all'], cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-if p.returncode == 0:
-    fail('unreadable template: build unexpectedly succeeded')
-if 'template file is not readable' not in (p.stdout + p.stderr):
-    fail('unreadable template: wrong diagnostic: ' + (p.stdout + p.stderr)[:200])
-if pair() != prior:
-    fail('unreadable template: previously successful output/metadata changed')
-os.chmod(root / 'templates/template.html', 0o644)
-
-# 4. Empty-but-readable vs unreadable remain distinct.
-(root / 'templates/template.html').write_text('<main>@content</main>\n')
-(root / 'content/index.html').write_text('')
-subprocess.run([nift, 'build', '--all'], cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-if (root / 'public/index.html').read_text() != '<main></main>\n':
-    fail('empty readable content rendered wrong')
-prior = pair()
-os.chmod(root / 'content/index.html', 0)
-expect_not_readable(prior, 'empty-but-unreadable content', root / 'content/index.html')
-
-print('unreadable-source contract passed')
-PY
+echo "unreadable-source smoke test passed: unreadable content/@input/template fail cleanly and preserve last good output"

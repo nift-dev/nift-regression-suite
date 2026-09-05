@@ -64,7 +64,9 @@ for test in \
   minify_integration_smoke.sh \
   template_optional_smoke.sh \
   init_targets_smoke.sh \
-  unreadable_source_smoke.sh
+  unreadable_source_smoke.sh \
+  json_six_forms_smoke.sh \
+  markup_directives_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done

@@ -35,6 +35,9 @@ same externally observable contract.
 
 `legacy/` contains the accumulated historical + ruthless black-box suite
 (the accumulated historical/ruthless assertions against the 4.0.2 development checkpoint).
+Every `@json` assertion in it was migrated from the retired path-first syntax to
+the current name-first contract; the full historical module passes against the
+reviewed 4.0.10 candidate.
 
 `contract/` contains the later focused executable-level contract modules that
 were previously kept beside the Nift source tree.
@@ -42,9 +45,24 @@ were previously kept beside the Nift source tree.
 `contract/parameter_interpolation_smoke.sh` is the 73-check contract for `$[...]`
 interpolation in textual `@function(...)` parameters. It was written red before
 implementation and now passes with the other focused modules. Its history
-preserves that test-first checkpoint; the current expected result is 22 green
-modules: the historical/ruthless module plus 21 focused modules, including
-pagination, collection operations and the long-running filesystem-recovery contract.
+preserves that test-first checkpoint. It was migrated to the name-first `@json`
+contract along with the rest of the suite.
+
+`contract/json_six_forms_smoke.sh` is the black-box contract for the six
+name-first `@json` forms: `@json(name, path)`, `@json(name, schema-path, path)`,
+`@json(name, schema-name, path)` and the three inline forms. It also covers
+inline templating, named-schema reuse, immutable binding and failed-validation
+non-binding, collisions, the schema-name-versus-schema-path disambiguation
+(quoted arguments are paths; bare identifiers are existing binding names and
+never fall back to files), lazy branches, loop scope, path safety and
+incremental data/schema invalidation.
+
+`contract/markup_directives_smoke.sh` is the black-box contract for `@markup`
+inline and file-backed conversion of Markdown, AsciiDoc and reStructuredText,
+their long aliases, template-before-conversion and the no-second-pass guarantee,
+JSON and loop bindings inside markup, include dependency recording and
+invalidation, unknown-format/missing-source/traversal/cycle failures, and brace
+handling in Markdown code spans and fenced blocks.
 
 `contract/filesystem_recovery_smoke.sh` protects the long-running recovery contract:
 a dead-owner transactional temp created after an earlier build-pass scan may remain

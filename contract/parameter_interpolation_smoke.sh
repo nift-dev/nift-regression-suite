@@ -99,8 +99,8 @@ printf x >"$P/public/assets/app-B7K2pQ.js"
 printf '{"message":"CHOSEN"}\n' >"$P/data/chosen.json"
 printf '{"type":"object","required":["message"],"properties":{"message":{"type":"string"}}}\n' >"$P/schemas/chosen.schema.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selectors.json", selector)
-@json("data/$[selector.dataset].json", chosen, "schemas/$[selector.schema].json")
+@json(selector, "data/selectors.json")
+@json(chosen, "schemas/$[selector.schema].json", "data/$[selector.dataset].json")
 WHOLE=@input($[selector.partial])
 DOUBLE=@input("partials/$[selector.layout].html")
 SINGLE=@input('partials/$[selector.layout].html')
@@ -154,8 +154,8 @@ make_project "$P"
 printf '{"binding":"dynamic"}\n' >"$P/data/selector.json"
 printf '{}\n' >"$P/data/value.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
-@json("data/value.json", $[selector.binding])
+@json(selector, "data/selector.json")
+@json($[selector.binding], "data/value.json")
 EOF
 expect_build_failure "$P" 'json: name must be an identifier' 'JSON binding names remain static grammar'
 
@@ -167,7 +167,7 @@ for kind in array object; do
   else value='{"x":1}'; diagnostic='parameter expression must resolve to a scalar value'; fi
   printf '{"value":%s}\n' "$value" >"$P/data/selector.json"
   cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 @dep($[selector.value])
 EOF
   expect_build_failure "$P" "$diagnostic" "$kind values are rejected as textual parameters"
@@ -178,7 +178,7 @@ done
 P="$TMP/missing"; make_project "$P"
 printf '{}\n' >"$P/data/selector.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 @dep("data/$[selector.missing].txt")
 EOF
 expect_build_failure "$P" "has no member 'missing'" 'missing member reports value-resolution failure'
@@ -186,7 +186,7 @@ expect_build_failure "$P" "has no member 'missing'" 'missing member reports valu
 P="$TMP/malformed"; make_project "$P"
 printf '{}\n' >"$P/data/selector.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 @dep("data/$[selector.value.txt")
 <p>AFTER-MALFORMED</p>
 EOF
@@ -200,7 +200,7 @@ P="$TMP/traversal"; make_project "$P"
 printf '{"path":"../outside.txt"}\n' >"$P/data/selector.json"
 printf outside >"$TMP/outside.txt"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 @dep($[selector.path])
 EOF
 expect_build_failure "$P" 'dep: path must stay inside the Nift project' 'interpolated traversal is rejected'
@@ -213,7 +213,7 @@ for mode in modified hash hybrid; do
   printf 'B\n' >"$P/templates/partials/b.html"
   printf '{"partial":"a"}\n' >"$P/data/selector.json"
   cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 @input("partials/$[selector.partial].html")
 @content
 EOF
@@ -243,7 +243,7 @@ P="$TMP/dynamic-dep"; make_project "$P" modified
 printf a >"$P/data/a.txt"; printf b >"$P/data/b.txt"
 printf '{"dep":"a"}\n' >"$P/data/selector.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 @dep("data/$[selector.dep].txt")
 @content
 EOF
@@ -260,7 +260,7 @@ P="$TMP/requirements"; make_project "$P" modified
 printf a >"$P/public/assets/a.js"; printf b >"$P/public/assets/b.js"
 printf '{"asset":"a"}\n' >"$P/data/selector.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 <script src="@pathto('public/assets/$[selector.asset].js')"></script>
 @content
 EOF
@@ -283,8 +283,8 @@ printf '{"source":"a"}\n' >"$P/data/selector.json"
 printf '{"value":"A"}\n' >"$P/data/a.json"
 printf '{"value":"B"}\n' >"$P/data/b.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
-@json("data/$[selector.source].json", selected)
+@json(selector, "data/selector.json")
+@json(selected, "data/$[selector.source].json")
 $[selected.value]
 @content
 EOF
@@ -303,7 +303,7 @@ printf 'GOOD-A\n' >"$P/templates/partials/a.html"
 printf 'GOOD-B\n' >"$P/templates/partials/b.html"
 printf '{"partial":"a"}\n' >"$P/data/selector.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/selector.json", selector)
+@json(selector, "data/selector.json")
 @input("partials/$[selector.partial].html")
 @content
 EOF

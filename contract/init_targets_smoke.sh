@@ -2,6 +2,8 @@
 set -euo pipefail
 
 NIFT_BIN=${NIFT_BIN:-"$(pwd)/nift"}
+EXPECTED_VERSION="$($NIFT_BIN version | sed -n 's/^Nift v//p')"
+[[ -n "$EXPECTED_VERSION" ]] || { echo "could not determine Nift version" >&2; exit 1; }
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
@@ -83,7 +85,7 @@ PY
 test -f "$TMP/vercel/.vercel/output/static/index.html"
 grep -qxF '.vercel/output/static/' "$TMP/vercel/.gitignore"
 
-python3 - "$TMP/amplify/.nift/config.json" "$TMP/amplify/.amplify-hosting/deploy-manifest.json" <<'PY'
+python3 - "$TMP/amplify/.nift/config.json" "$TMP/amplify/.amplify-hosting/deploy-manifest.json" "$EXPECTED_VERSION" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding='utf-8') as f: cfg=json.load(f)['config']
 with open(sys.argv[2], encoding='utf-8') as f: manifest=json.load(f)
@@ -91,7 +93,7 @@ assert cfg['output-dir'] == '.amplify-hosting/static/'
 assert manifest['version'] == 1
 assert manifest['routes'] == [{'path':'/*','target':{'kind':'Static'}}]
 assert manifest['framework']['name'] == 'nift'
-assert manifest['framework']['version'] == '4.0.10'
+assert manifest['framework']['version'] == sys.argv[3]
 PY
 test -f "$TMP/amplify/.amplify-hosting/static/index.html"
 grep -qxF '.amplify-hosting/static/' "$TMP/amplify/.gitignore"
@@ -117,8 +119,6 @@ grep -q 'pages_build_output_dir = "./public"' "$TMP/cloudflare/wrangler.toml"
 # workflow setup is documented because the runner must install Nift first.
 test -f "$TMP/github-pages/public/index.html"
 test ! -e "$TMP/github-pages/.github/workflows/pages.yml"
-# Supabase is intentionally an integration-only target: ordinary Nift output,
-# with backend project state added later by the Supabase CLI when needed.
 test -f "$TMP/supabase/public/index.html"
 test ! -e "$TMP/supabase/supabase/config.toml"
 

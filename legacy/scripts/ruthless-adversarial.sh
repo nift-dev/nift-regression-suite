@@ -141,7 +141,7 @@ done
 P="$TMP_ROOT/rapid-content"; mkproj "$P"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); printf RAPID-CONTENT >"$P/content/index.html"; same_second_newer "$P/content/index.html" "$P/.nift/public/index.info.json"; (cd "$P" && "$NIFT_BIN" build >log 2>&1); check contains "$P/public/index.html" 'RAPID-CONTENT' 'modified mode missed content edit within same second'; check contains "$P/log" 'dependency changed: content/index.html' 'rapid content edit missing rebuild reason'
 P="$TMP_ROOT/rapid-template"; mkproj "$P"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); printf 'RAPID-TEMPLATE\n@content\n' >"$P/templates/template.html"; same_second_newer "$P/templates/template.html" "$P/.nift/public/index.info.json"; (cd "$P" && "$NIFT_BIN" build >log 2>&1); check contains "$P/public/index.html" 'RAPID-TEMPLATE' 'modified mode missed template edit within same second'; check contains "$P/log" 'dependency changed: templates/template.html' 'rapid template edit missing rebuild reason'
 P="$TMP_ROOT/rapid-dep"; mkproj "$P"; printf D1 >"$P/data.txt"; printf '@dep("data.txt")\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); printf D2 >"$P/data.txt"; same_second_newer "$P/data.txt" "$P/.nift/public/index.info.json"; (cd "$P" && "$NIFT_BIN" build >log 2>&1); check contains "$P/log" 'dependency changed: data.txt' 'modified mode missed explicit dependency edit within same second'
-P="$TMP_ROOT/rapid-json"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"value":"ONE"}' >"$P/data/state.json"; printf '@json("data/state.json", state)\n$[state.value]\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); printf '%s\n' '{"value":"TWO"}' >"$P/data/state.json"; same_second_newer "$P/data/state.json" "$P/.nift/public/index.info.json"; (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1); check contains "$P/public/index.html" 'TWO' 'modified mode missed @json edit within same second'
+P="$TMP_ROOT/rapid-json"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"value":"ONE"}' >"$P/data/state.json"; printf '@json(state, "data/state.json")\n$[state.value]\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); printf '%s\n' '{"value":"TWO"}' >"$P/data/state.json"; same_second_newer "$P/data/state.json" "$P/.nift/public/index.info.json"; (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1); check contains "$P/public/index.html" 'TWO' 'modified mode missed @json edit within same second'
 
 P="$TMP_ROOT/title-change"; mkproj "$P"; printf 'TITLE=$[title]\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); python3 -S - "$P/.nift/tracked.json" <<'PY'
 import json,sys
@@ -177,7 +177,7 @@ P="$TMP_ROOT/hash-state-junk"; mkproj "$P" hash; (cd "$P" && "$NIFT_BIN" build -
 # -----------------------------------------------------------------------------
 # JSON parser / template data edge cases
 # -----------------------------------------------------------------------------
-json_fail(){ local name="$1" source="$2"; local d="$TMP_ROOT/json-$name"; mkproj "$d"; mkdir -p "$d/data"; printf '%s' "$source" >"$d/data/test.json"; printf '@json("data/test.json", data)\n$[data]\n@content\n' >"$d/templates/template.html"; check nonzero "$name JSON unexpectedly accepted" bash -c "cd '$d' && '$NIFT_BIN' build --all"; }
+json_fail(){ local name="$1" source="$2"; local d="$TMP_ROOT/json-$name"; mkproj "$d"; mkdir -p "$d/data"; printf '%s' "$source" >"$d/data/test.json"; printf '@json(data, "data/test.json")\n$[data]\n@content\n' >"$d/templates/template.html"; check nonzero "$name JSON unexpectedly accepted" bash -c "cd '$d' && '$NIFT_BIN' build --all"; }
 json_fail duplicate-key '{"x":1,"x":2}'
 json_fail number-leading-zero '01'
 json_fail number-negative-leading-zero '-01'
@@ -192,7 +192,7 @@ json_fail invalid-surrogate-pair '"\uD83D\u0041"'
 json_fail trailing-array-comma '[1,]'
 json_fail trailing-object-comma '{"x":1,}'
 
-P="$TMP_ROOT/json-unicode"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"emoji":"\uD83D\uDE00","escaped":"line\nnext"}' >"$P/data/test.json"; printf '@json("data/test.json", data)\n$[data.emoji]\n$[data.escaped]\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); check contains "$P/public/index.html" '😀' 'valid JSON surrogate pair did not decode to UTF-8'; TESTS=$((TESTS+1)); python3 -S - "$P/public/index.html" <<'PY' || fail 'valid JSON newline escape did not decode'
+P="$TMP_ROOT/json-unicode"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"emoji":"\uD83D\uDE00","escaped":"line\nnext"}' >"$P/data/test.json"; printf '@json(data, "data/test.json")\n$[data.emoji]\n$[data.escaped]\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); check contains "$P/public/index.html" '😀' 'valid JSON surrogate pair did not decode to UTF-8'; TESTS=$((TESTS+1)); python3 -S - "$P/public/index.html" <<'PY' || fail 'valid JSON newline escape did not decode'
 import sys
 raise SystemExit(0 if 'line\nnext' in open(sys.argv[1],encoding='utf-8').read() else 1)
 PY
@@ -203,7 +203,7 @@ PY
 # Multiline @for/@if bodies use their source indentation only for readability.
 # Rendered content aligns to the directive insertion point, like @input.
 P="$TMP_ROOT/control-indent"; mkproj "$P"; mkdir -p "$P/data" "$P/templates/partials"; printf '%s\n' '{"enabled":true,"disabled":false,"items":[{"name":"one","show":true},{"name":"two","show":false}]}' >"$P/data/site.json"; printf 'PARTIAL-ONE\nPARTIAL-TWO\n' >"$P/templates/partials/two-lines.html"; cat >"$P/templates/template.html" <<'EOF'
-@json("data/site.json", site)
+@json(site, "data/site.json")
 <div class="for-block">
     @for(item : site.items) {
         <p>FOR=$[item.name]</p>
@@ -266,10 +266,10 @@ check contains "$P/public/index.html" '<div class="inline-for"><b>one</b>' 'inli
 check contains "$P/public/index.html" '<div class="inline-if"><i>INLINE-IF</i></div>' 'inline @if body did not begin at insertion point'
 
 P="$TMP_ROOT/control-scope"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"items":[1,2],"text":"a==b","neg":-3.5}' >"$P/data/list.json"; printf '%s\n' '{"x":"LOCAL"}' >"$P/data/local.json"; cat >"$P/templates/template.html" <<'NIFT'
-@json("data/list.json", list)
-@for(item : list.items){@json("data/local.json", local)LOOP=$[item]-$[local.x]
+@json(list, "data/list.json")
+@for(item : list.items){@json(local, "data/local.json")LOOP=$[item]-$[local.x]
 }
-@if(true){@json("data/local.json", branch)BRANCH=$[branch.x]
+@if(true){@json(branch, "data/local.json")BRANCH=$[branch.x]
 }
 AFTER=$[branch]
 @if(list.text == "a==b"){OP-IN-STRING
@@ -301,10 +301,10 @@ AFTER=$[branch]
 @content
 NIFT
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); check contains "$P/public/index.html" 'LOOP=1-LOCAL' '@json inside first loop iteration failed'; check contains "$P/public/index.html" 'LOOP=2-LOCAL' '@json binding leaked and broke second loop iteration'; check contains "$P/public/index.html" 'BRANCH=LOCAL' '@json inside selected if block unavailable'; check contains "$P/public/index.html" 'AFTER=$[branch]' '@json binding declared inside if leaked outside block'; check contains "$P/public/index.html" 'OP-IN-STRING' 'condition parser misread == inside quoted string'; check contains "$P/public/index.html" 'NEGATIVE-NUMBER' 'negative numeric scalar comparison failed'; check contains "$P/public/index.html" 'LITERAL-TRUTHY' 'string literal truthiness failed'; check contains "$P/public/index.html" 'ZERO-FALSEY' 'numeric zero negation truthiness failed'; check contains "$P/public/index.html" 'ORDER-LT' 'numeric < comparison failed'; check contains "$P/public/index.html" 'ORDER-LE-EQ' 'numeric <= equality boundary failed'; check contains "$P/public/index.html" 'ORDER-GT' 'numeric > comparison failed'; check contains "$P/public/index.html" 'ORDER-GE-EQ' 'numeric >= equality boundary failed'; check contains "$P/public/index.html" 'ORDER-NEGATIVE' 'negative numeric ordering failed'; check contains "$P/public/index.html" 'ORDER-STRING-LT' 'string lexicographic < comparison failed'; check contains "$P/public/index.html" 'ORDER-STRING-GE-EQ' 'string lexicographic >= boundary failed'; check contains "$P/public/index.html" 'ORDER-QUOTED-LT' 'condition parser misread < inside quoted string'; check contains "$P/public/index.html" 'ORDER-QUOTED-GE' 'condition parser misread >= inside quoted string'
-P="$TMP_ROOT/control-order-mixed"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"n":3}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@if(d.n < "4"){x}\n' >"$P/templates/template.html"; check nonzero 'mixed-type ordering comparison was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
-P="$TMP_ROOT/control-order-bool"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"a":true,"b":false}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@if(d.a >= d.b){x}\n' >"$P/templates/template.html"; check nonzero 'boolean ordering comparison was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
-P="$TMP_ROOT/control-no-and"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"a":true,"b":true}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@if(d.a && d.b){x}\n' >"$P/templates/template.html"; check nonzero 'unsupported && expression was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
-P="$TMP_ROOT/control-no-or"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"a":false,"b":true}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@if(d.a || d.b){x}\n' >"$P/templates/template.html"; check nonzero 'unsupported || expression was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/control-order-mixed"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"n":3}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@if(d.n < "4"){x}\n' >"$P/templates/template.html"; check nonzero 'mixed-type ordering comparison was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/control-order-bool"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"a":true,"b":false}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@if(d.a >= d.b){x}\n' >"$P/templates/template.html"; check nonzero 'boolean ordering comparison was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/control-no-and"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"a":true,"b":true}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@if(d.a && d.b){x}\n' >"$P/templates/template.html"; check nonzero 'unsupported && expression was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/control-no-or"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"a":false,"b":true}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@if(d.a || d.b){x}\n' >"$P/templates/template.html"; check nonzero 'unsupported || expression was silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
 
 # -----------------------------------------------------------------------------
 # JSON Schema, loop metadata, and sorted iteration
@@ -312,18 +312,18 @@ P="$TMP_ROOT/control-no-or"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"a
 P="$TMP_ROOT/schema-valid"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"products":[{"name":"Widget","price":10}]}' >"$P/data/products.json"; cat >"$P/data/products.schema.json" <<'SCHEMA'
 {"$schema":"https://json-schema.org/draft/2020-12/schema","$defs":{"product":{"type":"object","required":["name","price"],"properties":{"name":{"type":"string","minLength":1},"price":{"type":"number","minimum":0}},"additionalProperties":false}},"type":"object","required":["products"],"properties":{"products":{"type":"array","items":{"$ref":"#/$defs/product"}}},"additionalProperties":false}
 SCHEMA
-printf '@json("data/products.json", d, "data/products.schema.json")\n@for(p : d.products){$[loop.index]/$[loop.length]:$[p.name]\n}\n@content\n' >"$P/templates/template.html"; check zero 'valid schema-bound JSON failed to build' bash -c "cd '$P' && '$NIFT_BIN' build --all"; check contains "$P/public/index.html" '1/1:Widget' 'loop metadata unavailable in schema-bound data loop'; check contains "$P/.nift/public/index.info.json" 'data/products.schema.json' 'schema file was not recorded as page dependency'
+printf '@json(d, "data/products.schema.json", "data/products.json")\n@for(p : d.products){$[loop.index]/$[loop.length]:$[p.name]\n}\n@content\n' >"$P/templates/template.html"; check zero 'valid schema-bound JSON failed to build' bash -c "cd '$P' && '$NIFT_BIN' build --all"; check contains "$P/public/index.html" '1/1:Widget' 'loop metadata unavailable in schema-bound data loop'; check contains "$P/.nift/public/index.info.json" 'data/products.schema.json' 'schema file was not recorded as page dependency'
 
-P="$TMP_ROOT/schema-invalid"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"price":"free"}' >"$P/data/test.json"; printf '%s\n' '{"type":"object","properties":{"price":{"type":"number"}}}' >"$P/data/test.schema.json"; printf '@json("data/test.json", d, "data/test.schema.json")\n' >"$P/templates/template.html"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build --all >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'schema type mismatch was accepted'; contains "$P/log" 'at $.price: expected number' 'schema mismatch diagnostic did not identify instance path/type'
+P="$TMP_ROOT/schema-invalid"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"price":"free"}' >"$P/data/test.json"; printf '%s\n' '{"type":"object","properties":{"price":{"type":"number"}}}' >"$P/data/test.schema.json"; printf '@json(d, "data/test.schema.json", "data/test.json")\n' >"$P/templates/template.html"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build --all >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'schema type mismatch was accepted'; contains "$P/log" 'at $.price: expected number' 'schema mismatch diagnostic did not identify instance path/type'
 
-P="$TMP_ROOT/schema-required"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{}' >"$P/data/test.json"; printf '%s\n' '{"type":"object","required":["name"]}' >"$P/data/test.schema.json"; printf '@json("data/test.json", d, "data/test.schema.json")\n' >"$P/templates/template.html"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build --all >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'schema required member omission was accepted'; contains "$P/log" "required property 'name' is missing" 'required-member schema diagnostic missing'
+P="$TMP_ROOT/schema-required"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{}' >"$P/data/test.json"; printf '%s\n' '{"type":"object","required":["name"]}' >"$P/data/test.schema.json"; printf '@json(d, "data/test.schema.json", "data/test.json")\n' >"$P/templates/template.html"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build --all >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'schema required member omission was accepted'; contains "$P/log" "required property 'name' is missing" 'required-member schema diagnostic missing'
 
-P="$TMP_ROOT/schema-unsupported"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"email":"a@example.com"}' >"$P/data/test.json"; printf '%s\n' '{"properties":{"email":{"type":"string","format":"email"}}}' >"$P/data/test.schema.json"; printf '@json("data/test.json", d, "data/test.schema.json")\n' >"$P/templates/template.html"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build --all >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'unsupported schema keyword was silently ignored'; contains "$P/log" "unsupported JSON Schema keyword 'format'" 'unsupported schema keyword did not produce explicit diagnostic'
+P="$TMP_ROOT/schema-unsupported"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"email":"a@example.com"}' >"$P/data/test.json"; printf '%s\n' '{"properties":{"email":{"type":"string","format":"email"}}}' >"$P/data/test.schema.json"; printf '@json(d, "data/test.schema.json", "data/test.json")\n' >"$P/templates/template.html"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build --all >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'unsupported schema keyword was silently ignored'; contains "$P/log" "unsupported JSON Schema keyword 'format'" 'unsupported schema keyword did not produce explicit diagnostic'
 
-P="$TMP_ROOT/schema-incremental"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"price":10}' >"$P/data/test.json"; printf '%s\n' '{"type":"object","properties":{"price":{"type":"number"}}}' >"$P/data/test.schema.json"; printf '@json("data/test.json", d, "data/test.schema.json")\nPRICE=$[d.price]\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); sleep 0.02; printf '%s\n' '{"type":"object","properties":{"price":{"type":"string"}}}' >"$P/data/test.schema.json"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'changed schema did not invalidate/revalidate dependent page'; contains "$P/log" 'does not satisfy schema' 'changed schema rebuild did not report validation failure'
+P="$TMP_ROOT/schema-incremental"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"price":10}' >"$P/data/test.json"; printf '%s\n' '{"type":"object","properties":{"price":{"type":"number"}}}' >"$P/data/test.schema.json"; printf '@json(d, "data/test.schema.json", "data/test.json")\nPRICE=$[d.price]\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); sleep 0.02; printf '%s\n' '{"type":"object","properties":{"price":{"type":"string"}}}' >"$P/data/test.schema.json"; TESTS=$((TESTS+1)); (cd "$P" && "$NIFT_BIN" build >log 2>&1); rc=$?; [[ $rc -ne 0 ]] || fail 'changed schema did not invalidate/revalidate dependent page'; contains "$P/log" 'does not satisfy schema' 'changed schema rebuild did not report validation failure'
 
 P="$TMP_ROOT/loop-sort"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"posts":[{"name":"old","date":"2025","score":1},{"name":"new-a","date":"2026","score":9},{"name":"mid","date":"2025-06","score":5},{"name":"new-b","date":"2026","score":9}],"nums":[10,2,30]}' >"$P/data/test.json"; cat >"$P/templates/template.html" <<'NIFT'
-@json("data/test.json", d)
+@json(d, "data/test.json")
 @for(p : d.posts by p.date desc){D=$[loop.index]/$[loop.length]:$[p.name]:$[loop.first]:$[loop.last]|}
 @for(p : d.posts by p.score asc){A=$[loop.index0]:$[p.name]|}
 @for(n : d.nums by n asc){N=$[n]|}
@@ -332,12 +332,12 @@ AFTER=$[loop.index]
 NIFT
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); check contains "$P/public/index.html" 'D=1/4:new-a:true:false|D=2/4:new-b:false:false|D=3/4:mid:false:false|D=4/4:old:false:true|' 'descending stable string sort / loop metadata failed'; check contains "$P/public/index.html" 'A=0:old|A=1:mid|A=2:new-a|A=3:new-b|' 'ascending numeric sort was not stable'; check contains "$P/public/index.html" 'N=2|N=10|N=30|' 'scalar numeric sort failed'; check contains "$P/public/index.html" 'AFTER=$[loop.index]' 'loop metadata leaked after loop scope'
 
-P="$TMP_ROOT/loop-nested-meta"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"groups":[{"name":"a","items":[1,2]},{"name":"b","items":[3]}]}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@for(g : d.groups){OB=$[loop.index]/$[loop.length]|@for(x : g.items){I=$[loop.index]/$[loop.length]|}OA=$[loop.index]/$[loop.length]|}\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); check contains "$P/public/index.html" 'OB=1/2|I=1/2|I=2/2|OA=1/2|OB=2/2|I=1/1|OA=2/2|' 'nested loop metadata did not shadow/restore correctly'
+P="$TMP_ROOT/loop-nested-meta"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"groups":[{"name":"a","items":[1,2]},{"name":"b","items":[3]}]}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@for(g : d.groups){OB=$[loop.index]/$[loop.length]|@for(x : g.items){I=$[loop.index]/$[loop.length]|}OA=$[loop.index]/$[loop.length]|}\n@content\n' >"$P/templates/template.html"; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); check contains "$P/public/index.html" 'OB=1/2|I=1/2|I=2/2|OA=1/2|OB=2/2|I=1/1|OA=2/2|' 'nested loop metadata did not shadow/restore correctly'
 
-P="$TMP_ROOT/loop-reserved-json"; mkproj "$P"; mkdir -p "$P/data"; printf '{}\n' >"$P/data/test.json"; printf '@json("data/test.json", loop)\n' >"$P/templates/template.html"; check nonzero 'reserved loop alias accepted by @json' bash -c "cd '$P' && '$NIFT_BIN' build --all"
-P="$TMP_ROOT/loop-reserved-for"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"items":[1]}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@for(loop : d.items){x}\n' >"$P/templates/template.html"; check nonzero 'reserved loop binding accepted by @for' bash -c "cd '$P' && '$NIFT_BIN' build --all"
-P="$TMP_ROOT/sort-mixed"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"items":[{"key":1},{"key":"2"}]}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@for(item : d.items by item.key asc){x}\n' >"$P/templates/template.html"; check nonzero 'mixed-type sort keys were silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
-P="$TMP_ROOT/sort-missing-direction"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"items":[{"key":1}]}' >"$P/data/test.json"; printf '@json("data/test.json", d)\n@for(item : d.items by item.key){x}\n' >"$P/templates/template.html"; check nonzero 'sort clause without asc/desc was accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/loop-reserved-json"; mkproj "$P"; mkdir -p "$P/data"; printf '{}\n' >"$P/data/test.json"; printf '@json(loop, "data/test.json")\n' >"$P/templates/template.html"; check nonzero 'reserved loop alias accepted by @json' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/loop-reserved-for"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"items":[1]}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@for(loop : d.items){x}\n' >"$P/templates/template.html"; check nonzero 'reserved loop binding accepted by @for' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/sort-mixed"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"items":[{"key":1},{"key":"2"}]}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@for(item : d.items by item.key asc){x}\n' >"$P/templates/template.html"; check nonzero 'mixed-type sort keys were silently accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
+P="$TMP_ROOT/sort-missing-direction"; mkproj "$P"; mkdir -p "$P/data"; printf '%s\n' '{"items":[{"key":1}]}' >"$P/data/test.json"; printf '@json(d, "data/test.json")\n@for(item : d.items by item.key){x}\n' >"$P/templates/template.html"; check nonzero 'sort clause without asc/desc was accepted' bash -c "cd '$P' && '$NIFT_BIN' build --all"
 
 # -----------------------------------------------------------------------------
 # Watch state / reconciliation
@@ -385,7 +385,7 @@ printf A >"$P/public/assets/a.txt"; printf B >"$P/public/assets/b.txt"
 printf '{"choice":"a"}\n' >"$P/data/site.json"
 printf '%s\n' '{"type":"object","properties":{"choice":{"enum":["a","b"]}}}' >"$P/schemas/site.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/site.json", site, "schemas/site.json")
+@json(site, "schemas/site.json", "data/site.json")
 @if(site.choice == "a"){@pathto('public/assets/a.txt')}else{@pathto('public/assets/b.txt')}
 @content
 EOF
@@ -400,7 +400,7 @@ check not_contains "$P/.nift/public/index.info.json" '"public/assets/a.txt"' 'ol
 P="$TMP_ROOT/req-repair-data"; mkproj "$P"; mkdir -p "$P/data" "$P/public/assets"
 printf X >"$P/public/assets/x.txt"; printf '{"show":true}\n' >"$P/data/site.json"
 cat >"$P/templates/template.html" <<'EOF'
-@json("data/site.json", site)
+@json(site, "data/site.json")
 @if(site.show){@pathto('public/assets/x.txt')}
 @content
 EOF
@@ -421,7 +421,7 @@ PY
   printf '{"value":1}\n' >"$P/data/site.json"
   printf '%s\n' '{"type":"object","properties":{"value":{"type":"integer","maximum":5}}}' >"$P/schemas/site.json"
   cat >"$P/templates/template.html" <<'EOF'
-@json("data/site.json", site, "schemas/site.json")
+@json(site, "schemas/site.json", "data/site.json")
 <a href="@pathto('public/assets/a.txt')">$[site.value]</a>
 @content
 EOF

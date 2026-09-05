@@ -1517,7 +1517,7 @@ cat >"$JSOND/data/site.json" <<'JSON'
 }
 JSON
 cat >"$JSOND/templates/template.html" <<'EOF'
-@json("data/site.json", site)
+@json(site, "data/site.json")
 NAME=$[site.name]
 VERSION=$[site.version]
 BOOL=$[site.enabled]
@@ -1560,30 +1560,30 @@ make_json_failure_case(){
 }
 
 make_json_failure_case malformed-json 'json: failed to parse data/test.json' \
-  '@json("data/test.json", data)' '{"broken":'
+  '@json(data, "data/test.json")' '{"broken":'
 make_json_failure_case duplicate-json-alias "json: name 'data' is already bound" \
-  $'@json("data/test.json", data)\n@json("data/test.json", data)' '{}'
+  $'@json(data, "data/test.json")\n@json(data, "data/test.json")' '{}'
 make_json_failure_case invalid-json-alias 'json: name must be an identifier' \
-  '@json("data/test.json", bad-name)' '{}'
+  '@json(bad-name, "data/test.json")' '{}'
 make_json_failure_case reserved-json-alias 'conflicts with built-in metadata' \
-  '@json("data/test.json", title)' '{}'
+  '@json(title, "data/test.json")' '{}'
 make_json_failure_case missing-json-member "has no member 'missing'" \
-  $'@json("data/test.json", data)\n$[data.missing]' '{"present":1}'
+  $'@json(data, "data/test.json")\n$[data.missing]' '{"present":1}'
 make_json_failure_case json-index-out-of-range 'JSON array index 3 is out of range' \
-  $'@json("data/test.json", data)\n$[data.items[3]]' '{"items":[1]}'
+  $'@json(data, "data/test.json")\n$[data.items[3]]' '{"items":[1]}'
 make_json_failure_case json-index-non-array 'because it is not an array' \
-  $'@json("data/test.json", data)\n$[data.item[0]]' '{"item":{"x":1}}'
+  $'@json(data, "data/test.json")\n$[data.item[0]]' '{"item":{"x":1}}'
 make_json_failure_case json-member-non-object 'because the current JSON value is not an object' \
-  $'@json("data/test.json", data)\n$[data.items.foo]' '{"items":[1]}'
+  $'@json(data, "data/test.json")\n$[data.items.foo]' '{"items":[1]}'
 make_json_failure_case render-json-array 'cannot render JSON array' \
-  $'@json("data/test.json", data)\n$[data.items]' '{"items":[1,2]}'
+  $'@json(data, "data/test.json")\n$[data.items]' '{"items":[1,2]}'
 make_json_failure_case render-json-object 'cannot render JSON object' \
-  $'@json("data/test.json", data)\n$[data.item]' '{"item":{"x":1}}'
+  $'@json(data, "data/test.json")\n$[data.item]' '{"item":{"x":1}}'
 
 JSONMISS="$TMP_ROOT/json-missing-file"
 mkdir -p "$JSONMISS"
 (cd "$JSONMISS" && "$NIFT_BIN" init >/dev/null 2>&1)
-printf '%s\n' '@json("data/nope.json", data)' >"$JSONMISS/templates/template.html"
+printf '%s\n' '@json(data, "data/nope.json")' >"$JSONMISS/templates/template.html"
 TESTS=$((TESTS+1))
 if (cd "$JSONMISS" && "$NIFT_BIN" build --all >log 2>&1); then
   fail '@json missing file unexpectedly succeeded'
@@ -1595,7 +1595,7 @@ JSONTRAV="$TMP_ROOT/json-traversal/project"
 mkdir -p "$JSONTRAV"
 (cd "$JSONTRAV" && "$NIFT_BIN" init >/dev/null 2>&1)
 printf '{}\n' >"$TMP_ROOT/json-traversal/outside.json"
-printf '%s\n' '@json("../outside.json", data)' >"$JSONTRAV/templates/template.html"
+printf '%s\n' '@json(data, "../outside.json")' >"$JSONTRAV/templates/template.html"
 TESTS=$((TESTS+1))
 if (cd "$JSONTRAV" && "$NIFT_BIN" build --all >log 2>&1); then
   fail '@json traversal unexpectedly succeeded'
@@ -1609,7 +1609,7 @@ mkdir -p "$JSONINC"
 (cd "$JSONINC" && "$NIFT_BIN" init >/dev/null 2>&1)
 mkdir -p "$JSONINC/data"
 printf '{"value":"one"}\n' >"$JSONINC/data/state.json"
-printf '%s\n' '@json("data/state.json", data)' 'VALUE=$[data.value]' '@content' >"$JSONINC/templates/template.html"
+printf '%s\n' '@json(data, "data/state.json")' 'VALUE=$[data.value]' '@content' >"$JSONINC/templates/template.html"
 (cd "$JSONINC" && "$NIFT_BIN" build --all >/dev/null 2>&1)
 before=$(stat -c %Y "$JSONINC/public/index.html")
 sleep 1.1
@@ -1631,7 +1631,7 @@ make_json_hash_case(){
   sed -i "s/\"incremental-mode\": \"modified\"/\"incremental-mode\": \"$mode\"/" "$d/.nift/config.json"
   mkdir -p "$d/data"
   printf '{"value":"one"}\n' >"$d/data/state.json"
-  printf '%s\n' '@json("data/state.json", data)' 'VALUE=$[data.value]' '@content' >"$d/templates/template.html"
+  printf '%s\n' '@json(data, "data/state.json")' 'VALUE=$[data.value]' '@content' >"$d/templates/template.html"
   (cd "$d" && "$NIFT_BIN" build --all >/dev/null 2>&1)
   cp -p "$d/data/state.json" "$d/original.json"
   printf '{"value":"two"}\n' >"$d/data/state.json"
@@ -1686,7 +1686,7 @@ cat >"$CF/data/site.json" <<'JSON'
 }
 JSON
 cat >"$CF/templates/template.html" <<'EOF'
-@json("data/site.json", site)
+@json(site, "data/site.json")
 @if(site.enabled){IF_TRUE
 }
 @if(!site.disabled){IF_NEGATED_TRUE
@@ -1817,7 +1817,7 @@ PARTIAL-ONE
 PARTIAL-TWO
 EOF
 cat >"$CFI/templates/template.html" <<'EOF'
-@json("data/site.json", site)
+@json(site, "data/site.json")
 <div class="for-block">
     @for(item : site.items) {
         <p>FOR=$[item.name]</p>
@@ -1890,7 +1890,7 @@ cat >"$CFS/data/site.json" <<'JSON'
 {"groups":[{"name":"g1","items":[{"name":"a"},{"name":"b"}]},{"name":"g2","items":[{"name":"c"}]}]}
 JSON
 cat >"$CFS/templates/template.html" <<'EOF'
-@json("data/site.json", site)
+@json(site, "data/site.json")
 @for(item : site.groups){
 OUTER1=$[item.name]
 @for(item : item.items){INNER=$[item.name]
@@ -1931,18 +1931,18 @@ make_control_failure(){
 make_control_failure if-no-close "@if has no matching ')'" '@if(site.enabled{hello' '{"enabled":true}'
 make_control_failure if-no-block "@if(...) must be followed by a '{...}' block" '@if(site.enabled) hello' '{"enabled":true}'
 make_control_failure if-unclosed-block "@if block has no matching '}'" '@if(site.enabled){hello' '{"enabled":true}'
-make_control_failure if-missing-member "has no member 'missing'" $'@json("data/site.json", site)\n@if(site.missing){x}' '{}'
-make_control_failure if-object-comparison '@if comparisons are only supported for scalar JSON values' $'@json("data/site.json", site)\n@if(site.obj == site.obj){x}' '{"obj":{"x":1}}'
-make_control_failure if-order-mixed '@if ordering comparisons require two numbers or two strings of the same type' $'@json("data/site.json", site)\n@if(site.n < "4"){x}' '{"n":3}'
-make_control_failure if-order-bool '@if ordering comparisons require two numbers or two strings of the same type' $'@json("data/site.json", site)\n@if(site.a >= site.b){x}' '{"a":true,"b":false}'
-make_control_failure for-no-in "@for header must contain ':'" $'@json("data/site.json", site)\n@for(item site.items){x}' '{"items":[]}'
-make_control_failure for-array-bad-binding 'array @for syntax is @for(item : array)' $'@json("data/site.json", site)\n@for((a,b) : site.items){x}' '{"items":[]}'
-make_control_failure for-object-bad-binding 'object @for syntax is @for((key, val) : object)' $'@json("data/site.json", site)\n@for(item : site.obj){x}' '{"obj":{"a":1}}'
-make_control_failure for-object-same-bindings 'object @for key and value bindings must be distinct identifiers' $'@json("data/site.json", site)\n@for((x, x) : site.obj){x}' '{"obj":{"a":1}}'
-make_control_failure for-scalar '@for can only iterate over JSON arrays or objects' $'@json("data/site.json", site)\n@for(item : site.value){x}' '{"value":1}'
-make_control_failure for-unclosed-block "@for block has no matching '}'" $'@json("data/site.json", site)\n@for(item : site.items){x' '{"items":[]}'
-make_control_failure for-reserved-binding "conflicts with built-in metadata" $'@json("data/site.json", site)\n@for(title : site.items){x}' '{"items":[1]}'
-make_control_failure duplicate-plain-else "plain else must be the final branch" $'@json("data/site.json", site)\n@if(false){a}else{b}else{c}' '{}'
+make_control_failure if-missing-member "has no member 'missing'" $'@json(site, "data/site.json")\n@if(site.missing){x}' '{}'
+make_control_failure if-object-comparison '@if comparisons are only supported for scalar JSON values' $'@json(site, "data/site.json")\n@if(site.obj == site.obj){x}' '{"obj":{"x":1}}'
+make_control_failure if-order-mixed '@if ordering comparisons require two numbers or two strings of the same type' $'@json(site, "data/site.json")\n@if(site.n < "4"){x}' '{"n":3}'
+make_control_failure if-order-bool '@if ordering comparisons require two numbers or two strings of the same type' $'@json(site, "data/site.json")\n@if(site.a >= site.b){x}' '{"a":true,"b":false}'
+make_control_failure for-no-in "@for header must contain ':'" $'@json(site, "data/site.json")\n@for(item site.items){x}' '{"items":[]}'
+make_control_failure for-array-bad-binding 'array @for syntax is @for(item : array)' $'@json(site, "data/site.json")\n@for((a,b) : site.items){x}' '{"items":[]}'
+make_control_failure for-object-bad-binding 'object @for syntax is @for((key, val) : object)' $'@json(site, "data/site.json")\n@for(item : site.obj){x}' '{"obj":{"a":1}}'
+make_control_failure for-object-same-bindings 'object @for key and value bindings must be distinct identifiers' $'@json(site, "data/site.json")\n@for((x, x) : site.obj){x}' '{"obj":{"a":1}}'
+make_control_failure for-scalar '@for can only iterate over JSON arrays or objects' $'@json(site, "data/site.json")\n@for(item : site.value){x}' '{"value":1}'
+make_control_failure for-unclosed-block "@for block has no matching '}'" $'@json(site, "data/site.json")\n@for(item : site.items){x' '{"items":[]}'
+make_control_failure for-reserved-binding "conflicts with built-in metadata" $'@json(site, "data/site.json")\n@for(title : site.items){x}' '{"items":[1]}'
+make_control_failure duplicate-plain-else "plain else must be the final branch" $'@json(site, "data/site.json")\n@if(false){a}else{b}else{c}' '{}'
 
 # Control flow remains dependency-aware through @json and therefore rebuilds
 # when data changes.
@@ -1952,7 +1952,7 @@ mkdir -p "$CFI"
 mkdir -p "$CFI/data"
 printf '{"show":true,"items":["one"]}\n' >"$CFI/data/state.json"
 cat >"$CFI/templates/template.html" <<'EOF'
-@json("data/state.json", state)
+@json(state, "data/state.json")
 @if(state.show){VISIBLE
 }else{HIDDEN
 }

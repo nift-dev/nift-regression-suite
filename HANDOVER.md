@@ -31,12 +31,14 @@ history; this repository owns black-box contract methodology.
   institutional context, including failure families, parameter
   interpolation coverage, and production-readiness responsibilities.
 
-The current runner contains the historical/ruthless module plus 20 focused
-contract modules, for 23 modules total. The focused layer now includes the v4.0.3
+The current runner contains the historical/ruthless module plus 24 focused
+contract modules, for 25 modules total. The focused layer now includes the v4.0.3
 pagination and composable collection-operation contracts, the v4.0.4 long-running
-filesystem-recovery contract, the 4.0.2 initializer/platform-target contract, and
-the v4.0.9 unreadable-source contract (unreadable content/@input/template must
-fail with a "not readable" diagnostic and preserve the last successful output).
+filesystem-recovery contract, the 4.0.2 initializer/platform-target contract, the
+v4.0.9 unreadable-source contract (unreadable content/@input/template must
+fail with a "not readable" diagnostic and preserve the last successful output),
+and the v4.0.10 six-form name-first `@json` and `@markup` directive contracts.
+All legacy and focused `@json` assertions were migrated to the name-first syntax.
 Treat counts as checkpoint facts, not the
 quality claim.
 
