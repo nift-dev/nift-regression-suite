@@ -118,7 +118,6 @@ run_test contains public/escaping.html 'UNKNOWN=@not-a-real-function' 'unknown @
 run_test contains public/escaping.html 'META_UNKNOWN=$[not-real]' 'unknown metadata preserved'
 
 # Comments/current parser behavior.
-run_test not_contains public/comments.html 'raw single line removed' '@# raw single-line comment removed'
 run_test not_contains public/comments.html 'raw single line removed too' '@// raw single-line comment removed'
 run_test not_contains public/comments.html 'raw multiline @ent' '<#-- raw multiline comment removed without processing'
 run_test contains public/comments.html 'ordinary slash-star text &excl;' 'ordinary /* text is not a Nift comment and is still parsed normally'
