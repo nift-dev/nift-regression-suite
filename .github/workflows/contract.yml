@@ -1,0 +1,33 @@
+name: Contract suite against Nift
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      nift-sha:
+        description: Nift commit SHA to test against (default: main)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: regression-suite
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-dev/nift
+          ref: ${{ github.event.inputs.nift-sha || 'main' }}
+          path: nift
+      - name: Build Nift
+        run: make -C nift -j2 nift
+      - name: Run independent contract suite
+        run: |
+          bash regression-suite/run-contract.sh "$PWD/nift/nift"
