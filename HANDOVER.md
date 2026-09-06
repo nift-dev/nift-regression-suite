@@ -1,7 +1,7 @@
 # Nift regression-suite handover
 
 This repository is the canonical implementation-independent behavioral contract
-for the Nift v4 family. The current development executable targets Nift 4.0.11; it
+for the Nift v4 family. The current development executable targets Nift 4.0.12; it
 is not an implementation test directory extracted from the C++ tree.
 
 ## Authority and purpose
@@ -15,6 +15,24 @@ same observable contract.
 Current suite behavior and runner files are authoritative. Nift source/tests are
 authoritative for implementation internals. Nift's core handover owns product
 history; this repository owns black-box contract methodology.
+
+## Cross-repository push ordering
+
+When a change modifies both Nift and this repository, push **Nift first**, verify
+the intended Nift commit/version is present on `origin/main`, and only then push
+the regression-suite commit that depends on it. The `Contract suite against Nift`
+workflow checks out `nift-dev/nift` from its remote `main` branch, so pushing a
+new contract first makes CI execute that contract against the previous Nift
+revision. A red result in that situation is legitimate but tests the wrong
+cross-repository pair.
+
+The v4.0.11 release hit exactly this race: this repository's `837a616` was
+pushed while Nift `main` was still v4.0.10, so the workflow built v4.0.10 and
+failed on the v4.0.11 `@/* ... */` grammar and version assertion. The subsequent
+clean 25/25 run after Nift `main` was current confirmed no suite or Nift
+corrective change was warranted. The workflow prints the exact Nift commit and
+`nift version` under test so any recurrence is immediately visible in the run
+log.
 
 ## Layout
 

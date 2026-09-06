@@ -28,6 +28,11 @@ jobs:
           path: nift
       - name: Build Nift
         run: make -C nift -j2 nift
+      - name: Record tested revisions
+        run: |
+          echo "Nift source: $(git -C nift rev-parse HEAD)"
+          echo "Nift version: $(./nift/nift version)"
+          echo "Regression suite: $(git -C regression-suite rev-parse HEAD)"
       - name: Run independent contract suite
         run: |
           bash regression-suite/run-contract.sh "$PWD/nift/nift"
