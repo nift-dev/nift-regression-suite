@@ -1,7 +1,7 @@
 # Nift regression-suite handover
 
 This repository is the canonical implementation-independent behavioral contract
-for the Nift v4 family. The current development executable targets Nift 4.0.10; it
+for the Nift v4 family. The current development executable targets Nift 4.0.11; it
 is not an implementation test directory extracted from the C++ tree.
 
 ## Authority and purpose
@@ -37,7 +37,7 @@ pagination and composable collection-operation contracts, the v4.0.4 long-runnin
 filesystem-recovery contract, the 4.0.2 initializer/platform-target contract, the
 v4.0.9 unreadable-source contract (unreadable content/@input/template must
 fail with a "not readable" diagnostic and preserve the last successful output),
-and the v4.0.10 six-form name-first `@json` and `@markup` directive contracts.
+and the v4.0.10 six-form name-first `@json` and `@markup` directive contracts and the v4.0.11 comment/WPT/Snap-maintenance contract.
 All legacy and focused `@json` assertions were migrated to the name-first syntax.
 Treat counts as checkpoint facts, not the
 quality claim.
