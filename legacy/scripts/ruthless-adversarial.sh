@@ -350,29 +350,29 @@ P="$TMP_ROOT/watch-manual-collision"; mkproj "$P"; mkdir -p "$P/content/w"; prin
 P="$TMP_ROOT/watch-dir-remove"; mkproj "$P"; mkdir -p "$P/content/w"; printf W >"$P/content/w/a.html"; (cd "$P" && "$NIFT_BIN" watch content/w/ >/dev/null 2>&1 && "$NIFT_BIN" build --all >/dev/null 2>&1); check exists "$P/public/w/a.html" 'watch directory removal baseline output missing'; check exists "$P/.nift/public/w/a.info.json" 'watch directory removal baseline page info missing'; rm -rf "$P/content/w"; (cd "$P" && "$NIFT_BIN" build >/dev/null 2>&1); TESTS=$((TESTS+1)); ! grep -Fq '"name": "w/a"' "$P/.nift/tracked.json" || fail 'removing entire watched directory left auto-tracked page'; check not_exists "$P/public/w/a.html" 'removing entire watched directory left generated output'; check not_exists "$P/.nift/public/w/a.info.json" 'removing entire watched directory left page build metadata'
 
 # -----------------------------------------------------------------------------
-# Requirements recorded by @pathto: existence matters, modification does not
+# Requirements recorded by @path: existence matters, modification does not
 # -----------------------------------------------------------------------------
 P="$TMP_ROOT/pathto-req"; mkproj "$P"; mkdir -p "$P/public/assets"; printf 'body{}\n' >"$P/public/assets/generated.css"; printf 'ABOUT\n' >"$P/content/about.html"; (cd "$P" && "$NIFT_BIN" track about >/dev/null 2>&1)
 cat >"$P/content/index.html" <<'EOF'
-<link href="@pathto('public/assets/generated.css')">
-<a href="@pathto('about')">About</a>
+<link href="@path('public/assets/generated.css')">
+<a href="@path('about')">About</a>
 EOF
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1)
-check contains "$P/.nift/public/index.info.json" '"reqs"' '@pathto did not persist requirements metadata'
-check contains "$P/.nift/public/index.info.json" '"public/assets/generated.css"' '@pathto did not record concrete file requirement'
-check contains "$P/.nift/public/index.info.json" '"public/about.html"' '@pathto did not record tracked output requirement'
+check contains "$P/.nift/public/index.info.json" '"reqs"' '@path did not persist requirements metadata'
+check contains "$P/.nift/public/index.info.json" '"public/assets/generated.css"' '@path did not record concrete file requirement'
+check contains "$P/.nift/public/index.info.json" '"public/about.html"' '@path did not record tracked output requirement'
 printf 'body{color:red}\n' >"$P/public/assets/generated.css"; (cd "$P" && "$NIFT_BIN" status >status-modified.log 2>&1)
 check not_contains "$P/status-modified.log" 'generated.css' 'modified requirement incorrectly invalidated page'
 rm "$P/public/assets/generated.css"; (cd "$P" && "$NIFT_BIN" status >status-missing.log 2>&1)
-check contains "$P/status-missing.log" 'required path missing: public/assets/generated.css' 'missing @pathto requirement was not reported'
+check contains "$P/status-missing.log" 'required path missing: public/assets/generated.css' 'missing @path requirement was not reported'
 (cd "$P" && "$NIFT_BIN" build >missing-rebuild.log 2>&1 || true)
-check contains "$P/missing-rebuild.log" "'public/assets/generated.css' is neither a tracked name nor a file that exists" 'missing req did not flow through normal @pathto rebuild error'
+check contains "$P/missing-rebuild.log" "'public/assets/generated.css' is neither a tracked name nor a file that exists" 'missing req did not flow through normal @path rebuild error'
 
 # Missing reqs are rebuild reasons, not pre-build fatal errors. If source has
 # changed to remove the reference, build must get the chance to repair it.
 cat >"$P/content/index.html" <<'EOF'
 <p>reference removed</p>
-<a href="@pathto('about')">About</a>
+<a href="@path('about')">About</a>
 EOF
 check zero 'missing req prevented a source change from repairing the page' bash -c "cd '$P' && '$NIFT_BIN' build"
 check not_contains "$P/.nift/public/index.info.json" '"public/assets/generated.css"' 'successful repair retained removed req'
@@ -386,7 +386,7 @@ printf '{"choice":"a"}\n' >"$P/data/site.json"
 printf '%s\n' '{"type":"object","properties":{"choice":{"enum":["a","b"]}}}' >"$P/schemas/site.json"
 cat >"$P/templates/template.html" <<'EOF'
 @json(site, "schemas/site.json", "data/site.json")
-@if(site.choice == "a"){@pathto('public/assets/a.txt')}else{@pathto('public/assets/b.txt')}
+@if(site.choice == "a"){@path('public/assets/a.txt')}else{@path('public/assets/b.txt')}
 @content
 EOF
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1)
@@ -401,7 +401,7 @@ P="$TMP_ROOT/req-repair-data"; mkproj "$P"; mkdir -p "$P/data" "$P/public/assets
 printf X >"$P/public/assets/x.txt"; printf '{"show":true}\n' >"$P/data/site.json"
 cat >"$P/templates/template.html" <<'EOF'
 @json(site, "data/site.json")
-@if(site.show){@pathto('public/assets/x.txt')}
+@if(site.show){@path('public/assets/x.txt')}
 @content
 EOF
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); rm "$P/public/assets/x.txt"; printf '{"show":false}\n' >"$P/data/site.json"
@@ -422,7 +422,7 @@ PY
   printf '%s\n' '{"type":"object","properties":{"value":{"type":"integer","maximum":5}}}' >"$P/schemas/site.json"
   cat >"$P/templates/template.html" <<'EOF'
 @json(site, "schemas/site.json", "data/site.json")
-<a href="@pathto('public/assets/a.txt')">$[site.value]</a>
+<a href="@path('public/assets/a.txt')">$[site.value]</a>
 @content
 EOF
   (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1)

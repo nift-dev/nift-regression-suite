@@ -52,6 +52,7 @@ for test in \
   collection_ops_smoke.sh \
   pagination_smoke.sh \
   requirements_smoke.sh \
+  path_alias_smoke.sh \
   path_security_smoke.sh \
   path_safety_smoke.sh \
   metadata_safety_smoke.sh \

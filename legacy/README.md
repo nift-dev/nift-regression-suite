@@ -36,4 +36,4 @@ Raw check counts are not presented here as a quality score. Many numbered cases 
 
 ### Requirements coverage
 
-The ruthless extension verifies that ordinary `@pathto(...)` targets are persisted as internal `reqs`: modifying a req alone does not invalidate a page; deleting it marks the page for rebuilding; a changed template/content file can then remove the broken reference and rebuild successfully; if the source still references the missing target, failure comes from the ordinary `@pathto` parser error. Tracked outputs are also recorded as reqs. There is no public `@req` directive or `*.reqs.json` sidecar.
+The ruthless extension verifies that ordinary `@path(...)` targets are persisted as internal `reqs`: modifying a req alone does not invalidate a page; deleting it marks the page for rebuilding; a changed template/content file can then remove the broken reference and rebuild successfully; if the source still references the missing target, failure comes from the ordinary `@path` parser error. Tracked outputs are also recorded as reqs. There is no public `@req` directive or `*.reqs.json` sidecar.

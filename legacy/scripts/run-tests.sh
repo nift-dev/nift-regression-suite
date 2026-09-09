@@ -65,21 +65,21 @@ run_test contains public/input/indent.html '    line-one' '@content first line i
 run_test contains public/input/indent.html '    line-two' '@content subsequent lines inherit insertion indentation'
 run_test contains public/input/indent.html '      line-three' '@content preserves additional source indentation'
 
-# @pathto tracked names, implicit index, direct files, self.
-run_test contains public/paths/direct.html 'ROOT=../' '@pathto root tracked name'
-run_test contains public/paths/direct.html 'BASIC=../basic/content.html' '@pathto nested tracked page'
-run_test contains public/paths/direct.html 'NESTED=nested/' '@pathto implicit index strips index.html'
-run_test contains public/paths/direct.html 'ASSET=../assets/existing.txt' '@pathto existing direct file'
-run_test contains public/paths/direct.html 'SELF=./direct.html' '@pathto current tracked page'
+# @path tracked names, implicit index, direct files, self.
+run_test contains public/paths/direct.html 'ROOT=../' '@path root tracked name'
+run_test contains public/paths/direct.html 'BASIC=../basic/content.html' '@path nested tracked page'
+run_test contains public/paths/direct.html 'NESTED=nested/' '@path implicit index strips index.html'
+run_test contains public/paths/direct.html 'ASSET=../assets/existing.txt' '@path existing direct file'
+run_test contains public/paths/direct.html 'SELF=./direct.html' '@path current tracked page'
 
 
-# @pathto from a deeply nested output.
-run_test contains public/paths/deep/level/page.html 'ROOT=../../../' '@pathto deep page to root'
-run_test contains public/paths/deep/level/page.html 'BASIC=../../../basic/content.html' '@pathto deep page to tracked file'
-run_test contains public/paths/deep/level/page.html 'NESTED=../../nested/' '@pathto deep page to tracked index'
-run_test contains public/paths/deep/level/page.html 'ASSET=../../../assets/existing.txt' '@pathto deep page to direct asset'
-run_test contains public/paths/deep/level/page.html 'SPACE_ASSET=../../../assets/file with spaces.txt' '@pathto direct asset containing spaces'
-run_test contains public/paths/deep/level/page.html 'SELF=./page.html' '@pathto deep page to itself'
+# @path from a deeply nested output.
+run_test contains public/paths/deep/level/page.html 'ROOT=../../../' '@path deep page to root'
+run_test contains public/paths/deep/level/page.html 'BASIC=../../../basic/content.html' '@path deep page to tracked file'
+run_test contains public/paths/deep/level/page.html 'NESTED=../../nested/' '@path deep page to tracked index'
+run_test contains public/paths/deep/level/page.html 'ASSET=../../../assets/existing.txt' '@path deep page to direct asset'
+run_test contains public/paths/deep/level/page.html 'SPACE_ASSET=../../../assets/file with spaces.txt' '@path direct asset containing spaces'
+run_test contains public/paths/deep/level/page.html 'SELF=./page.html' '@path deep page to itself'
 
 # Metadata exact/static fields + dynamic format fields.
 M=public/metadata/all.html
@@ -218,7 +218,7 @@ expect_failure(){
 
 expect_failure 'input-missing' 'path does not exist' $'@input("does-not-exist.html")\n@content\n'
 expect_failure 'input-loop' 'would result in an input loop' $'@input("templates/t.html")\n@content\n'
-expect_failure 'pathto-missing' 'is neither a tracked name nor a file that exists' $'@pathto("no/such/target")\n@content\n'
+expect_failure 'pathto-missing' 'is neither a tracked name nor a file that exists' $'@path("no/such/target")\n@content\n'
 expect_failure 'content-params' 'content: expected 0 parameters' $'@content("bad")\n'
 expect_failure 'input-zero-params' 'input: expected 1 parameter' $'@input()\n@content\n'
 expect_failure 'getenv-two-params' 'getenv: expected 1 parameter' $'@getenv("A","B")\n@content\n'
@@ -264,10 +264,10 @@ if ! (cd "$d" && "$NIFT_BIN" build --all >/dev/null 2>&1) ||
 fi
 
 TESTS=$((TESTS+1))
-d=$(make_failure_project 'pathto-trailing-space' $'PATH=@pathto("/" )\n@content\n' 'CONTENT\n')
+d=$(make_failure_project 'pathto-trailing-space' $'PATH=@path("/" )\n@content\n' 'CONTENT\n')
 if ! (cd "$d" && "$NIFT_BIN" build --all >/dev/null 2>&1) ||
    ! grep -Fq 'PATH=./' "$d/public/index.html" 2>/dev/null; then
-  fail '@pathto quoted parameter with whitespace before ) is not trimmed'
+  fail '@path quoted parameter with whitespace before ) is not trimmed'
 fi
 
 TESTS=$((TESTS+1))

@@ -29,10 +29,10 @@ The project is both a browsable test website and a quiet shell regression suite.
 - blank template behavior
 
 ### Paths / metadata / environment
-- tracked-name `@pathto`
+- tracked-name `@path`
 - root tracked path
 - implicit `index.html` target
-- direct existing-file `@pathto`
+- direct existing-file `@path`
 - direct path containing spaces
 - deep nested path matrix
 - self-referential tracked path calculation
@@ -55,7 +55,7 @@ The project is both a browsable test website and a quiet shell regression suite.
 ## Expected parser/build failures
 - missing `@input`
 - input loop
-- missing `@pathto`
+- missing `@path`
 - invalid parameter counts
 - unknown `@ent`
 - zero/missing `@dep`
@@ -105,7 +105,7 @@ Additional coverage includes:
 
 - function-name termination at HTML, digits, punctuation and uppercase characters
 - quoted `@input` filenames containing comma, parentheses, brackets and repeated spaces
-- deeply nested `@pathto` calculations and direct files containing spaces
+- deeply nested `@path` calculations and direct files containing spaces
 - environment values containing literal Nift-looking syntax (must not be reparsed)
 - repeated `@content` use in one template
 - whitespace before parameter delimiters and multiline formatted calls

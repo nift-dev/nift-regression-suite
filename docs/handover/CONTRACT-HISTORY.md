@@ -317,7 +317,7 @@ Likely candidates requiring repository verification:
 ```text
 @input
 @dep
-@pathto
+@path
 @json path
 ```
 

@@ -9,7 +9,7 @@ Calls such as:
 
 ```text
 @input("templates/child.html" )
-@pathto("/" )
+@path("/" )
 @ent("!" )
 @getenv("NIFT_TEST_VALUE" )
 @dep("a.txt" , "b.txt" )

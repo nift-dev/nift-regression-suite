@@ -158,7 +158,7 @@ The upcoming contract should cover:
 - ordinary literal arguments and nearby CSS/JS remaining unchanged.
 
 Directive families should include every verified textual slot: likely `@input`,
-`@dep`, `@pathto`, and `@json` source/schema paths, plus other current directives
+`@dep`, `@path`, and `@json` source/schema paths, plus other current directives
 only after source classification.
 
 The essential dynamic graph sequence is A→B: selector source and A initially

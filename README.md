@@ -19,7 +19,8 @@ Tests exercise Nift from the outside:
 - CLI commands and exit status;
 - project config/tracking formats;
 - template language behavior;
-- content/input/path/metadata semantics;
+- content/input/path/metadata semantics, including canonical `@path(...)` and
+  exact legacy `@pathto(...)` compatibility;
 - JSON, JSON Schema, loops/conditions and dependency behavior;
 - incremental modified/hash/hybrid behavior;
 - watch/tracking/path safety and persistence behavior;
@@ -63,6 +64,12 @@ their long aliases, template-before-conversion and the no-second-pass guarantee,
 JSON and loop bindings inside markup, include dependency recording and
 invalidation, unknown-format/missing-source/traversal/cycle failures, and brace
 handling in Markdown code spans and fenced blocks.
+
+`contract/path_alias_smoke.sh` proves that canonical `@path(...)` and the
+legacy spelling produce identical rendered output and `reqs`, including quoted
+interpolation, escaping, lazy branches, incremental missing-requirement
+invalidation and path-safety diagnostics. It is the intentionally focused old-
+project compatibility guard; the rest of the maintained suite uses `@path`.
 
 `contract/filesystem_recovery_smoke.sh` protects the long-running recovery contract:
 a dead-owner transactional temp created after an earlier build-pass scan may remain

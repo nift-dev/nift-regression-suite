@@ -16,7 +16,7 @@ The current suite contains:
 - 210 shell assertions/tests
 - parser/function-name boundary tests
 - nested/relative/special-filename `@input`
-- deep tracked/direct `@pathto`
+- deep tracked/direct `@path`
 - all current metadata and `@ent` values
 - literal/non-recursive environment output
 - expected parser failures

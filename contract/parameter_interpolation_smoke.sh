@@ -109,7 +109,7 @@ ADJACENT=@input("partials/$[selector.left]$[selector.right].html")
 @dep("data/$[selector.number].txt", "data/$[selector.enabled].txt", "data/$[selector.nothing].txt")
 @dep("data/$[title].txt")
 @dep("$[selector.weird]")
-PATH=@pathto("public/assets/$[selector.asset].js")
+PATH=@path("public/assets/$[selector.asset].js")
 PATHFILE=@pathtofile('public/assets/$[selector.asset].js')
 ENV=@getenv("$[selector.env]")
 ENTITY=@ent($[selector.entity])
@@ -261,7 +261,7 @@ printf a >"$P/public/assets/a.js"; printf b >"$P/public/assets/b.js"
 printf '{"asset":"a"}\n' >"$P/data/selector.json"
 cat >"$P/templates/template.html" <<'EOF'
 @json(selector, "data/selector.json")
-<script src="@pathto('public/assets/$[selector.asset].js')"></script>
+<script src="@path('public/assets/$[selector.asset].js')"></script>
 @content
 EOF
 if (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); then
