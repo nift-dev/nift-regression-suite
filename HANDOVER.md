@@ -161,3 +161,23 @@ loosening of the parameter contract.
 - The independent control-flow contract now protects the dogfood-found bug where selected quoted ternary branches leaked their source quote delimiters into rendered output.
 - Coverage includes full/shorthand ternaries, true/false branches, single/double quotes, empty and escaped strings, inline HTML attributes, nested ternaries, literal directive-looking strings, selected directive execution and unselected dependency laziness.
 - The contract deliberately preserves the existing distinction: quoted scalar branches render as values, while non-literal selected branches remain lazy Nift source.
+
+## Nift v4.1 independent certification coverage (2026-09-15)
+
+The v4.1 contract modules cover the surface added by the template-language
+campaign and the defects found by the independent review:
+
+- `v41_template_variables_smoke.sh`, `v41_language_smoke.sh`,
+  `v41_operator_smoke.sh`, `v41_inject_dependency.sh` — the original v4.1
+  black-box language/operator/injection-dependency contracts.
+- `v41_certification_adversarial.sh` — protects the repaired language defects:
+  mutation-flag scoping across callables/inject, conditional `@return`, `@for`
+  loop-binding shadowing, undefined-callable errors, structured-binding array
+  indexing, structured-literal callable/`validate()` arguments, inject
+  declaration suppression and callable recursion bounds.
+- `v41_duplicate_key_smoke.sh` — independent compatibility assertion that Nift
+  rejects duplicate object keys in `.nift/config.json`, `@json`-loaded data,
+  `$[x := {...}]` expression literals, inline `@json(name){...}` blocks and
+  schema JSON. This guards the historical v4.0.13 contract that the Jsonic++
+  v1.0.0 integration temporarily lost (its RFC-preserving default) and that
+  Nift restores through its `nift_json::parse` policy wrapper.
