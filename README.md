@@ -1,7 +1,7 @@
 # Nift v4 Contract Regression Suite
 
 This is the canonical **implementation-independent** regression suite for the
-Nift v4 contract. The current development executable targets Nift 4.0.12.
+Nift v4 contract. The current development executable targets Nift 4.1.0.
 
 It does **not** compile or include Nift implementation source. Point it at any
 candidate Nift executable:
@@ -103,3 +103,15 @@ contract.
 ### Project contracts
 
 The canonical runner includes `contract/contracts_smoke.sh`, covering config-declared project-wide JSON contracts, namespace collision rules, lazy loading, incremental dependency/config remapping, and controlled failures.
+
+
+## Nift v4.1 template-language contract
+
+The v4.1 contract adds focused black-box modules for mutable lexical bindings and
+advanced expression composition. `contract/v41_template_variables_smoke.sh` covers declaration/assignment, lexical mutation and shadowing, chaining, `const`, stable inferred types and undefined-assignment errors. `contract/v41_language_smoke.sh` covers
+`immut`, generic multiline `@:=(name){...}` declarations, `inject()`,
+`validate()`, `@fn`/`@return`, and `@fragment`;
+`contract/v41_operator_smoke.sh` protects `:=`/`=` parsing beside comparison
+operators; and `contract/v41_inject_dependency.sh` proves injected expression
+sources participate in incremental rebuilding. Legacy `@json` remains covered
+separately while the v4.1 composable declaration/validation surface is adopted.

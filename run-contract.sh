@@ -67,7 +67,11 @@ for test in \
   init_targets_smoke.sh \
   unreadable_source_smoke.sh \
   json_six_forms_smoke.sh \
-  markup_directives_smoke.sh
+  markup_directives_smoke.sh \
+  v41_template_variables_smoke.sh \
+  v41_language_smoke.sh \
+  v41_operator_smoke.sh \
+  v41_inject_dependency.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done
