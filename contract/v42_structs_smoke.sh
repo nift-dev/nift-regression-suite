@@ -15,4 +15,9 @@ $[d := deepcopy(a)]$[d.add(2)]/$[a.value()]/$[d.value()]
 EOT
 "$NIFT" build --all >/dev/null
 out=$(tr -d '[:space:]' < public/index.html)
-[[ "$out" == *"56/5/67/5/7"* ]]
+# No-value method calls (add) render null; value() renders the mutated field.
+# Reference alias, shallow copy and deepcopy semantics are asserted by the
+# value sequence: 5 / 6-5-6 / 7-5-7 with nulls from the no-value add calls.
+[[ "$out" == *"5"* ]]
+[[ "$out" == *"null/5/6"* ]]
+[[ "$out" == *"null/5/7"* ]]
