@@ -181,3 +181,6 @@ campaign and the defects found by the independent review:
   schema JSON. This guards the historical v4.0.13 contract that the Jsonic++
   v1.0.0 integration temporarily lost (its RFC-preserving default) and that
   Nift restores through its `nift_json::parse` policy wrapper.
+
+## Nift v4.2 CP26
+The independent contract now follows the v4.2 function-program return grammar and adds a black-box struct module covering constructors, private methods, stateful methods, reference aliasing, shallow `copy`, and recursive `deepcopy`. Historical v4.1 release evidence remains historical; executable-current contract syntax was advanced deliberately.

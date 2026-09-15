@@ -73,7 +73,8 @@ for test in \
   v41_operator_smoke.sh \
   v41_inject_dependency.sh \
   v41_duplicate_key_smoke.sh \
-  v41_certification_adversarial.sh
+  v41_certification_adversarial.sh \
+  v42_structs_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done

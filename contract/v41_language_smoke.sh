@@ -9,7 +9,7 @@ $[immut frozen := {"x":1}]
 @:=(items){[1,2,3]}
 $[schema := {"type":"object","required":["n"],"properties":{"n":{"type":"number"}}}]
 $[j := validate(schema, inject("data.expr"))]
-@fn(add(a,b)){@return(a+b)}
+@fn(add(a,b)){return a+b}
 @fragment(card(x)){<b>$[x]</b>}
 n=$[j.n] sum=$[add(2,3)] frag=$[card("ok")]
 E
