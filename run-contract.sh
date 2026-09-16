@@ -78,6 +78,7 @@ for test in \
   v42_numeric_literals_smoke.sh \
   v43_language_smoke.sh \
   v43_scripting_io_smoke.sh \
+  v43_scripting_inspection_smoke.sh \
   v43_scripting_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
