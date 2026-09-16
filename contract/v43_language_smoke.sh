@@ -219,3 +219,20 @@ $[b := map()]$[b.set(true,"yes")]@for((k,v) : b){$[k]=$[v]}|
 EOT
 "$NIFT" build --all >/dev/null
 o=$(B); [[ "$o" == *"1=one2=two|one"* ]] && [[ "$o" == *"true=yes|"* ]]
+
+# Map @for must preserve typed keys: int/string and bool/string collisions are
+# distinct entries, and the iterated key round-trips through typed lookup.
+cat > content/index.html <<'EOT'
+$[m := map()]$[m.set(1,"int")]$[m.set("1","string")]@for((k,v) : m){$[k]=$[v]}|$[m.size()]
+$[m2 := map()]$[m2.set(true,"bool")]$[m2.set("true","string")]@for((k,v) : m2){$[k]=$[v]}|$[m2.size()]
+$[m3 := map()]$[m3.set(1,"int")]$[m3.set("1","string")]@for((k,v) : m3){$[m3.get(k)]}|
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"1=int1=string|2"* ]] && [[ "$o" == *"true=booltrue=string|2"* ]] && [[ "$o" == *"intstring"* ]]
+# 1 and 1.0 remain one logical numeric key; insertion/sorted order preserved.
+cat > content/index.html <<'EOT'
+$[m := map()]$[m.set(1,"a")]$[m.set(1.0,"b")]$[m.size()],$[m.get(1)],$[m.get(1.0)]
+$[im := map()]$[im.set(2,"two")]$[im.set(1,"one")]@for((k,v) : im){$[k]}|$[sm := sorted_map()]$[sm.set("b",2)]$[sm.set("a",1)]@for((k,v) : sm){$[k]}|
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"1,b,b"* ]] && [[ "$o" == *"21|ab|"* ]]
