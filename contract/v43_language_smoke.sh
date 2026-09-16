@@ -168,3 +168,54 @@ cat > content/index.html <<'EOT'
 $[f := () => missing_name]$[f()]
 EOT
 if "$NIFT" build --all >/dev/null 2>&1; then echo "lambda body error silently passed through" >&2; exit 1; fi
+# --- Mixed int64/double ordering across the full range (frozen numeric contract). ---
+cat > content/index.html <<'EOT'
+$[9223372036854775807 < 1e19],$[9223372036854775807 < 9223372036854775808.0],$[-9223372036854775808 > -1e19]
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"true,true,true"* ]]
+cat > content/index.html <<'EOT'
+$[9007199254740992 == 9007199254740992.0],$[9007199254740993 == 9007199254740992.0],$[9007199254740993 > 9007199254740992.0]
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"true,false,true"* ]]
+# Equality and ordering agree.
+cat > content/index.html <<'EOT'
+$[x := 9007199254740992]$[y := 9007199254740992.0]$[x==y],$[x<y],$[x>y]
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"true,false,false"* ]]
+
+# --- Forbidden user-visible cycles are rejected deterministically. ---
+cat > content/index.html <<'EOT'
+@struct(other){x:=0}@struct(node){next:=other()}
+$[a := node()]$[a.next = a]
+EOT
+if "$NIFT" build --all >/dev/null 2>&1; then echo "self cycle unexpectedly allowed" >&2; exit 1; fi
+cat > content/index.html <<'EOT'
+@struct(other){x:=0}@struct(node){next:=other()}
+$[a := node()]$[b := node()]$[a.next = b]$[b.next = a]
+EOT
+if "$NIFT" build --all >/dev/null 2>&1; then echo "indirect cycle unexpectedly allowed" >&2; exit 1; fi
+# Acyclic sharing and aliases remain legal.
+cat > content/index.html <<'EOT'
+@struct(other){x:=0}@struct(node){next:=other()}
+$[a := node()]$[b := node()]$[c := node()]$[a.next = b]$[b.next = c]$[a.next.next == c]
+$[d := a]$[d == a]
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"true"* ]] && [[ "$o" == *"true"* ]]
+# A lambda stored in a collection is not a forbidden user cycle (callables are leaves).
+cat > content/index.html <<'EOT'
+$[xs := []]$[xs.push(() => 7)]$[f := xs[0]]$[f()]
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"7"* ]]
+
+# Numeric/bool map keys are iterable via the object @for tuple form.
+cat > content/index.html <<'EOT'
+$[m := map()]$[m.set(1,"one")]$[m.set(2,"two")]@for((k,v) : m){$[k]=$[v]}|$[m.get(1)]
+$[b := map()]$[b.set(true,"yes")]@for((k,v) : b){$[k]=$[v]}|
+EOT
+"$NIFT" build --all >/dev/null
+o=$(B); [[ "$o" == *"1=one2=two|one"* ]] && [[ "$o" == *"true=yes|"* ]]
