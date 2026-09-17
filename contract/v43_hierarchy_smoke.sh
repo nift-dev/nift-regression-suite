@@ -26,7 +26,7 @@ must_error(){ if "$NIFT_BIN" run <(printf '%s\n' "$1") >/dev/null 2>&1; then ech
 [[ "$(run 'print(page("/").parent)')" == null ]]
 [[ "$(run 'print(page("about").parent.title)')" == Home ]]
 [[ "$(run 'print(page("docs").children.map(c => c.title).join(","))')" == Advanced,Basics ]]
-[[ "$(run 'print(page("docs/advanced/guide").ancestors.map(a => a.title).join(","))')" == Advanced,Docs,Home ]]
+[[ "$(run 'print(page("docs/advanced/guide").ancestors.map(a => a.title).join(","))')" == Home,Docs,Advanced ]]
 [[ "$(run 'print(page("docs").descendants.map(d => d.title).join(","))')" == Advanced,Guide,Basics ]]
 [[ "$(run 'print(page("docs/basics").siblings.map(s => s.title).join(","))')" == Advanced ]]
 [[ "$(run 'print(page("/").children.map(c => c.title).join(","))')" == About,Docs ]]
