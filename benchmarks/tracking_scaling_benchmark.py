@@ -33,7 +33,7 @@ def measure(n):
         values=[]
         for _ in range(args.runs):
             t=time.perf_counter()
-            p=subprocess.run([args.nift,"info-names"],cwd=root,
+            p=subprocess.run([args.nift,"info","--names"],cwd=root,
                              stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
             if p.returncode: raise SystemExit(p.stderr.decode(errors="replace"))
             values.append(time.perf_counter()-t)
