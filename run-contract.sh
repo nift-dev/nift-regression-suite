@@ -81,6 +81,8 @@ for test in \
   v43_scripting_inspection_smoke.sh \
   v43_scripting_ergonomics_smoke.sh \
   v43_managed_file_smoke.sh \
+  v43_managed_file_editing_smoke.sh \
+  v43_managed_file_smoke.sh \
   v43_scripting_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
