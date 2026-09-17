@@ -96,7 +96,7 @@ NIFT
 printf 'f := file("z.txt")\nf.open("r")\nf.write("x")\n' > ro.nift
 if "$NIFT" run ro.nift >/dev/null 2>&1; then echo "read-only write ok" >&2; exit 1; fi
 
-# --- Read surface parity with ifs. ---
+# --- Read surface parity with ifstream. ---
 printf 'l1\nl2' > r.txt
 cat > rd.nift <<'NIFT'
 f := file("r.txt")
@@ -106,7 +106,7 @@ print(f.read_line())
 print(f.read_line() == null)
 print(f.eof())
 f.close()
-s := ifs("r.txt")
+s := ifstream("r.txt")
 print(s.read_line())
 print(s.read_line())
 print(s.read_line() == null)

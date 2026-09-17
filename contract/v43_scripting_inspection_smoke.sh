@@ -46,7 +46,7 @@ printf 'x := "q\\"w\\nc"\nprint(x.stringify())\n' > s4.nift
 [[ "$("$NIFT" run s4.nift)" == '"q\"w\nc"' ]]
 printf 'f := (a) => a\nprint(f.stringify())\n' > s5.nift
 if "$NIFT" run s5.nift >/dev/null 2>&1; then echo "callable stringify succeeded" >&2; exit 1; fi
-printf 's := ifs("a.txt")\nprint(s.prettify())\n' > s6.nift
+printf 's := ifstream("a.txt")\nprint(s.prettify())\n' > s6.nift
 if "$NIFT" run s6.nift >/dev/null 2>&1; then echo "stream prettify succeeded" >&2; exit 1; fi
 printf 'struct(vault) { private secret := 7\npub := 1\nfn(read()) { return secret } }\nv := vault()\nprint(v.stringify())\nprint(v.read())\n' > s7.nift
 [[ "$("$NIFT" run s7.nift)" == $'vault{pub:1}\n7' ]]
