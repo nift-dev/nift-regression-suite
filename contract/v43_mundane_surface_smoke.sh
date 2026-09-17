@@ -46,6 +46,16 @@ print(a[1])')" == 20 ]]
 [[ "$(evalx '{"a":1}["a"]')" == 1 ]]
 [[ "$(evalx '[[1,2],[3,4]][1][0]')" == 3 ]]
 
+[[ "$(run 'a := [10,20,30]
+i := 1
+print(a[i])')" == 20 ]]
+[[ "$(run 'a := [10,20,30]
+i := 1 + 1
+print(a[i])')" == 30 ]]
+[[ "$(run 'a := [[1],[2,3],[4,5,6]]
+i := 2
+print(a[i][1])')" == 5 ]]
+
 # --- array membership ---
 [[ "$(run 'print([1,2,3].contains(2)); print([].contains(1)); print(["a","b"].contains("a"))')" == $'true\nfalse\ntrue' ]]
 [[ "$(run 'print([1,2,3].indexOf(2)); print([1,2,3].indexOf(9))')" == $'1\n-1' ]]
