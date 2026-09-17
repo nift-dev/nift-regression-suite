@@ -1570,7 +1570,7 @@ make_json_failure_case missing-json-member "has no member 'missing'" \
   $'@json(data, "data/test.json")\n$[data.missing]' '{"present":1}'
 make_json_failure_case json-index-out-of-range 'JSON array index 3 is out of range' \
   $'@json(data, "data/test.json")\n$[data.items[3]]' '{"items":[1]}'
-make_json_failure_case json-index-non-array 'because it is not an array' \
+make_json_failure_case json-index-non-array 'JSON object index must be a quoted string' \
   $'@json(data, "data/test.json")\n$[data.item[0]]' '{"item":{"x":1}}'
 make_json_failure_case json-member-non-object 'because the current JSON value is not an object' \
   $'@json(data, "data/test.json")\n$[data.items.foo]' '{"items":[1]}'
