@@ -4,8 +4,16 @@
   "template": "templates/indent.html",
   "content": "content/input/indent.html",
   "output": "public/input/indent.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/input/indent.html",
     "templates/indent.html"
-  ]
+  ],
+  "reqs": []
 }

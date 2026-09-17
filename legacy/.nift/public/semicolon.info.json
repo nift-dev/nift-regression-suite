@@ -4,8 +4,16 @@
   "template": "templates/semicolon.html",
   "content": "content/semicolon.html",
   "output": "public/semicolon.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/semicolon.html",
     "templates/semicolon.html"
-  ]
+  ],
+  "reqs": []
 }

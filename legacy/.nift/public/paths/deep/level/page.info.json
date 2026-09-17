@@ -4,8 +4,23 @@
   "template": "templates/paths-deep.html",
   "content": "content/paths/deep/level/page.html",
   "output": "public/paths/deep/level/page.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/paths/deep/level/page.html",
     "templates/paths-deep.html"
+  ],
+  "reqs": [
+    "public/assets/existing.txt",
+    "public/assets/file with spaces.txt",
+    "public/basic/content.html",
+    "public/index.html",
+    "public/paths/deep/level/page.html",
+    "public/paths/nested/index.html"
   ]
 }

@@ -4,6 +4,13 @@
   "template": "templates/input-tests.html",
   "content": "content/input/basic.html",
   "output": "public/input/basic.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/input/basic.html",
     "templates/input-tests.html",
@@ -12,5 +19,6 @@
     "templates/partials/relative-parent.html",
     "templates/partials/shared.html",
     "templates/partials/space name.html"
-  ]
+  ],
+  "reqs": []
 }

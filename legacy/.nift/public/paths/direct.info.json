@@ -4,8 +4,22 @@
   "template": "templates/paths.html",
   "content": "content/paths/direct.html",
   "output": "public/paths/direct.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/paths/direct.html",
     "templates/paths.html"
+  ],
+  "reqs": [
+    "public/assets/existing.txt",
+    "public/basic/content.html",
+    "public/index.html",
+    "public/paths/direct.html",
+    "public/paths/nested/index.html"
   ]
 }

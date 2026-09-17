@@ -4,8 +4,16 @@
   "template": "templates/env.html",
   "content": "content/environment.html",
   "output": "public/environment.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/environment.html",
     "templates/env.html"
-  ]
+  ],
+  "reqs": []
 }

@@ -4,9 +4,17 @@
   "template": "templates/content-in-partial.html",
   "content": "content/basic/content-in-partial.html",
   "output": "public/basic/content-in-partial.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/basic/content-in-partial.html",
     "templates/content-in-partial.html",
     "templates/partials/content-slot.html"
-  ]
+  ],
+  "reqs": []
 }

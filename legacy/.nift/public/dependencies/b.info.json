@@ -4,10 +4,18 @@
   "template": "templates/dep.html",
   "content": "content/dependencies/b.html",
   "output": "public/dependencies/b.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/dependencies/b.html",
     "data/dep-a.txt",
     "data/dep-b.txt",
     "templates/dep.html"
-  ]
+  ],
+  "reqs": []
 }

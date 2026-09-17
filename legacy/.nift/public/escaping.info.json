@@ -4,8 +4,16 @@
   "template": "templates/escaping.html",
   "content": "content/escaping.html",
   "output": "public/escaping.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/escaping.html",
     "templates/escaping.html"
-  ]
+  ],
+  "reqs": []
 }

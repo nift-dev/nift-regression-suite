@@ -4,8 +4,16 @@
   "template": "templates/entities.html",
   "content": "content/entities.html",
   "output": "public/entities.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/entities.html",
     "templates/entities.html"
-  ]
+  ],
+  "reqs": []
 }

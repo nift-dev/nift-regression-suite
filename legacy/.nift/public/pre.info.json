@@ -4,8 +4,16 @@
   "template": "templates/pre.html",
   "content": "content/pre.html",
   "output": "public/pre.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/pre.html",
     "templates/pre.html"
-  ]
+  ],
+  "reqs": []
 }

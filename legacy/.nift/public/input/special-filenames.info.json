@@ -4,6 +4,13 @@
   "template": "templates/input-special.html",
   "content": "content/input/special-filenames.html",
   "output": "public/input/special-filenames.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/input/special-filenames.html",
     "templates/input-special.html",
@@ -11,5 +18,6 @@
     "templates/partials/special/comma,file.html",
     "templates/partials/special/double space file.html",
     "templates/partials/special/paren(file).html"
-  ]
+  ],
+  "reqs": []
 }

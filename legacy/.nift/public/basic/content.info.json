@@ -4,8 +4,23 @@
   "template": "templates/base.html",
   "content": "content/basic/content.html",
   "output": "public/basic/content.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/basic/content.html",
     "templates/base.html"
+  ],
+  "reqs": [
+    "public/groups/cli-errors.html",
+    "public/groups/content-inputs.html",
+    "public/groups/dependencies-incremental.html",
+    "public/groups/parser-syntax.html",
+    "public/groups/paths-metadata.html",
+    "public/index.html"
   ]
 }

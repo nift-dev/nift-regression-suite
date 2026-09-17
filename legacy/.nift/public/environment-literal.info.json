@@ -4,8 +4,16 @@
   "template": "templates/env-literal.html",
   "content": "content/environment-literal.html",
   "output": "public/environment-literal.html",
+  "minify": false,
+  "minify-version": 0,
+  "pagination": false,
+  "pagination-items-per-page": 0,
+  "pagination-template": "",
+  "pagination-separator": "",
+  "pagination-pages": 0,
   "dependencies": [
     "content/environment-literal.html",
     "templates/env-literal.html"
-  ]
+  ],
+  "reqs": []
 }
