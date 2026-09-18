@@ -85,6 +85,7 @@ for test in \
   v43_scripting_smoke.sh \
   v43_typed_content_taxonomy_smoke.sh \
   v43_frontend_algebra_smoke.sh \
+  v43_final_language_smoke.sh \
   v43_hierarchy_smoke.sh \
   v43_mundane_surface_smoke.sh
 do
