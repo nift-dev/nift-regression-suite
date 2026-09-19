@@ -92,6 +92,7 @@ for test in \
   v44_language_foundation_smoke.sh \
   v44_execution_shell_smoke.sh \
   v44_packages_smoke.sh
+  v44_automation_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done
