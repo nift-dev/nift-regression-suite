@@ -91,10 +91,10 @@ for test in \
   v43_mundane_surface_smoke.sh \
   v44_language_foundation_smoke.sh \
   v44_execution_shell_smoke.sh \
-  v44_packages_smoke.sh
-  v44_automation_smoke.sh
-  v44_hooks_smoke.sh
-  v44_restricted_smoke.sh
+  v44_packages_smoke.sh \
+  v44_automation_smoke.sh \
+  v44_hooks_smoke.sh \
+  v44_restricted_smoke.sh \
   v44_package_hardening_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
