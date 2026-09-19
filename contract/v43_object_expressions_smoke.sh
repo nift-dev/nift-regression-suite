@@ -98,7 +98,8 @@ st.write_val(post)
 close(st)
 print(open("o.jsonl"))
 NIFT
-[[ "$("$NIFT_BIN" run "$T/ser.nift")" == $'{"title":"Hello","status":1}\n{"title":"Hello","status":1}' ]]
+# Run from the temp dir so the relative o.jsonl fixture stays out of the repo root.
+[[ "$(cd "$T" && "$NIFT_BIN" run ser.nift)" == $'{"title":"Hello","status":1}\n{"title":"Hello","status":1}' ]]
 
 # --- template parity ---
 T2="$T/proj"
