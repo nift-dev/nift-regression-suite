@@ -102,7 +102,9 @@ for test in \
   v44_minify_native_smoke.sh \
   v44_imagemagick_package_smoke.sh \
   v44_vips_magick_combined_smoke.sh \
-  v44_database_packages_smoke.sh
+  v44_database_packages_smoke.sh \
+  v44_transaction_atomicity_smoke.sh \
+  v44_parameter_binding_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done
