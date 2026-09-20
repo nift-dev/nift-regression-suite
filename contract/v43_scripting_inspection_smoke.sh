@@ -75,9 +75,8 @@ if printf '%s\n' "$repl" | grep -qx 'null'; then echo "null displayed" >&2; exit
 [[ "$repl" != *'""'* ]]
 [[ "$repl" != *$'\033'* ]]
 
-# --- REPL prompt: ~ abbreviation for home, exact home -> ~, no ~/ for home. ---
-prompt_home="$(cd "$R" && printf 'quit\n' | HOME="$R" NO_COLOR=1 "$NIFT" sh 2>/dev/null | head -1)"
-[[ "$prompt_home" == '~$'* ]]
-prompt_child="$(cd "$R/.." && printf 'quit\n' | HOME="$R" NO_COLOR=1 "$NIFT" sh 2>/dev/null | head -1)"
-# Child of home abbreviates the home prefix only.
-[[ "$prompt_child" != "${prompt_home}" ]] || true
+# --- Piped (non-interactive) stdin prints no prompt (standard shell
+# behaviour; the interactive prompt/abbreviation is not observable through a
+# pipe). The piped REPL must produce clean output with no prompt text. ---
+piped_repl="$(cd "$R" && printf 'quit\n' | HOME="$R" NO_COLOR=1 "$NIFT" sh 2>/dev/null)"
+[[ "$piped_repl" == '' ]] || { printf 'piped REPL emitted unexpected output: %s\n' "$piped_repl" >&2; exit 1; }

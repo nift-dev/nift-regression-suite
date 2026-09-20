@@ -9,6 +9,14 @@ NIFT_BIN=${NIFT_BIN:?}
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CURL_PKG="${CURL_PKG:-$ROOT/../nift-packages/curl}"
 SQLITE_PKG="${SQLITE_PKG:-$ROOT/../nift-packages/sqlite}"
+
+# The sqlite package backend is the sqlite3 executable. Skip (not fail) when it
+# is unavailable, matching the Nift repo's own sqlite dogfood behaviour; the
+# contract runs in full on CI runners that provide sqlite3.
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  echo "SKIP v44 curl+sqlite combined (sqlite3 executable unavailable)"
+  exit 0
+fi
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
 mkdir -p "$t/site/.nift"
 (cd "$t/site" && "$NIFT_BIN" add "$CURL_PKG" >/dev/null 2>&1)
