@@ -28,33 +28,42 @@ jobs:
           path: nift
       # The v4.4 package contracts dogfood the real nift-packages repositories,
       # which the contracts resolve as a sibling `nift-packages/` directory.
+      # Revisions are pinned to the coherent v4.4 package set so a later package
+      # push cannot unexpectedly break an unrelated Nift regression run.
       - uses: actions/checkout@v4
         with:
           repository: nift-packages/sqlite
+          ref: 85f59b3
           path: nift-packages/sqlite
       - uses: actions/checkout@v4
         with:
           repository: nift-packages/curl
+          ref: aa4f851
           path: nift-packages/curl
       - uses: actions/checkout@v4
         with:
           repository: nift-packages/postgres
+          ref: 4287333
           path: nift-packages/postgres
       - uses: actions/checkout@v4
         with:
           repository: nift-packages/mysql
+          ref: 4526f37
           path: nift-packages/mysql
       - uses: actions/checkout@v4
         with:
           repository: nift-packages/redis
+          ref: 7719fa8
           path: nift-packages/redis
       - uses: actions/checkout@v4
         with:
           repository: nift-packages/vips
+          ref: 735b996
           path: nift-packages/vips
       - uses: actions/checkout@v4
         with:
           repository: nift-packages/imagemagick
+          ref: dda5437
           path: nift-packages/imagemagick
       - name: Build Nift
         run: make -C nift -j2 nift
