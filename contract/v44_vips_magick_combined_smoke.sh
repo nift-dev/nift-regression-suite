@@ -44,9 +44,11 @@ grep -qE '^vips-exit:[0-9]+$' <<<"$out" || { echo "$out" >&2; exit 1; }
 if command -v magick >/dev/null 2>&1; then
   magick -size 32x32 xc:red "$t/site/assets/base.png" 2>/dev/null
   out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+  grep -q '^true$' <<<"$out" || { echo "$out" >&2; exit 1; }
+  grep -q '^magick-size:64x' <<<"$out" || exit 1
+else
+  echo "magick executable unavailable; live ImageMagick pipeline skipped"
 fi
-grep -q '^true$' <<<"$out" || { echo "$out" >&2; exit 1; }
-grep -q '^magick-size:64x' <<<"$out" || exit 1
 # private helpers from one package cannot shadow/leak into the other
 cat > "$t/site/priv.f" <<'F'
 @import("vips")
