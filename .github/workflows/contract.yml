@@ -26,6 +26,36 @@ jobs:
           repository: nift-dev/nift
           ref: "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.nift-sha || 'main' }}"
           path: nift
+      # The v4.4 package contracts dogfood the real nift-packages repositories,
+      # which the contracts resolve as a sibling `nift-packages/` directory.
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-packages/sqlite
+          path: nift-packages/sqlite
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-packages/curl
+          path: nift-packages/curl
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-packages/postgres
+          path: nift-packages/postgres
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-packages/mysql
+          path: nift-packages/mysql
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-packages/redis
+          path: nift-packages/redis
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-packages/vips
+          path: nift-packages/vips
+      - uses: actions/checkout@v4
+        with:
+          repository: nift-packages/imagemagick
+          path: nift-packages/imagemagick
       - name: Build Nift
         run: make -C nift -j2 nift
       - name: Record tested revisions
