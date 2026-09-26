@@ -110,7 +110,8 @@ for test in \
   v45_cli_invocation_smoke.sh \
   v45_host_introspection_smoke.sh \
   v45_target_smoke.sh \
-  v45_jobs_background_smoke.sh
+  v45_jobs_background_smoke.sh \
+  v45_job_control_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done
