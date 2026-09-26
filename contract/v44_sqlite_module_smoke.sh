@@ -17,14 +17,14 @@ print(sqlite.available() == true || sqlite.available() == false)
 db := sqlite.open("test.db")
 print(db.path)
 NIFT
-out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+out=$(cd "$t/site" && "$NIFT_BIN" t.f)
 [ "$out" = $'struct\ntrue\ntest.db' ] || { printf '%s\n' "$out" >&2; exit 1; }
 # Private helpers must not leak into the importer.
 cat > "$t/site/priv.f" <<'NIFT'
 @import("sqlite")
 print(sqlite_bind)
 NIFT
-if (cd "$t/site" && "$NIFT_BIN" run priv.f >/dev/null 2>&1); then exit 1; fi
+if (cd "$t/site" && "$NIFT_BIN" priv.f >/dev/null 2>&1); then exit 1; fi
 # The exported struct's callable fields resolve even when the module is
 # re-imported and referenced indirectly.
 cat > "$t/site/alias.f" <<'NIFT'
@@ -32,5 +32,5 @@ cat > "$t/site/alias.f" <<'NIFT'
 s := sqlite
 print(s.open("x.db").path)
 NIFT
-[ "$(cd "$t/site" && "$NIFT_BIN" run alias.f)" = "x.db" ] || exit 1
+[ "$(cd "$t/site" && "$NIFT_BIN" alias.f)" = "x.db" ] || exit 1
 printf 'PASS v4.4 sqlite module API\n'

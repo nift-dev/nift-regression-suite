@@ -176,18 +176,18 @@ $[remove("..")]
 EOT
 if "$NIFT" build --all >/dev/null 2>&1; then echo "remove escaped project" >&2; exit 1; fi
 
-# --- CLI: nift run and nift sh (black box). ---
+# --- CLI: direct nift script execution and plain nift shell (black box). ---
 printf 'print("run-ok")\n' > run1.nift
-[[ "$("$NIFT" run run1.nift)" == 'run-ok' ]]
+[[ "$("$NIFT" run1.nift)" == 'run-ok' ]]
 printf 'return 42\n' > run2.nift
-[[ "$("$NIFT" run run2.nift)" == '42' ]]
+[[ "$("$NIFT" run2.nift)" == '42' ]]
 printf 'this_is_not_defined\n' > run3.nift
-if "$NIFT" run run3.nift >/dev/null 2>&1; then echo "undefined run statement exited zero" >&2; exit 1; fi
+if "$NIFT" run3.nift >/dev/null 2>&1; then echo "undefined run statement exited zero" >&2; exit 1; fi
 printf 'print("missing-file")\n' > run4.nift
-if "$NIFT" run does-not-exist.nift >/dev/null 2>&1; then echo "missing run file exited zero" >&2; exit 1; fi
+if "$NIFT" does-not-exist.nift >/dev/null 2>&1; then echo "missing run file exited zero" >&2; exit 1; fi
 printf 'who := read()\nprint("got:" + who)\n' > run5.nift
-[[ "$(printf 'hello\n' | "$NIFT" run run5.nift)" == 'got:hello' ]]
-# nift sh: persistent bindings and error recovery in one session.
-repl=$(cd "$R" && printf 'x := 4\nprint(x)\nprint(undefined_thing)\nprint(x + 1)\nquit\n' | "$NIFT" sh 2>&1 || true)
+[[ "$(printf 'hello\n' | "$NIFT" run5.nift)" == 'got:hello' ]]
+# plain nift shell: persistent bindings and error recovery in one session.
+repl=$(cd "$R" && printf 'x := 4\nprint(x)\nprint(undefined_thing)\nprint(x + 1)\nquit\n' | "$NIFT" 2>&1 || true)
 grep -q '^4$' <<<"$repl" || grep -q '4' <<<"$repl"
 grep -q '5' <<<"$repl"

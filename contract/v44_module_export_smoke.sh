@@ -19,16 +19,16 @@ r := vips.resize(100, 50)
 print(r.w)
 print(r.h)
 F
-[ "$(cd "$t/site" && "$NIFT_BIN" run t.f)" = $'200\n100' ] || exit 1
+[ "$(cd "$t/site" && "$NIFT_BIN" t.f)" = $'200\n100' ] || exit 1
 cat > "$t/site/.nift/packages/vips/src/main.f" <<'F'
 @fn(scale_helper(x)) { return x * 2 }
 vips := {"resize": (w, h) => { return {"w": scale_helper(w), "h": scale_helper(h)} }}
 export(vips)
 F
-[ "$(cd "$t/site" && "$NIFT_BIN" run t.f)" = $'200\n100' ] || exit 1
+[ "$(cd "$t/site" && "$NIFT_BIN" t.f)" = $'200\n100' ] || exit 1
 cat > "$t/site/t2.f" <<'F'
 @import("vips")
 print(scale_helper(5))
 F
-if (cd "$t/site" && "$NIFT_BIN" run t2.f >/dev/null 2>&1); then exit 1; fi
+if (cd "$t/site" && "$NIFT_BIN" t2.f >/dev/null 2>&1); then exit 1; fi
 printf 'PASS v4.4 module export\n'

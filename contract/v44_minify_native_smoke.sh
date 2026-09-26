@@ -15,7 +15,7 @@ print(r.output)
 print(minify("<div>  <p>x</p> </div>", "html").output)
 print(minify("body { color: red;  background: blue; }", "css").output)
 F
-out=$("$NIFT_BIN" run "$t/s.f")
+out=$("$NIFT_BIN" "$t/s.f")
 [ "$(sed -n '1p' <<<"$out")" = "true" ] || exit 1
 [ "$(sed -n '2p' <<<"$out")" = "const x=1;const y=2" ] || exit 1
 [ "$(sed -n '3p' <<<"$out")" = "<div> <p>x</p> </div>" ] || exit 1
@@ -30,13 +30,13 @@ print(m.ok)
 print(m.error != "")
 F
 mkdir -p "$t/o"
-out=$(cd "$t" && "$NIFT_BIN" run f.f)
+out=$(cd "$t" && "$NIFT_BIN" f.f)
 [ "$(sed -n '1p' <<<"$out")" = "true" ] || exit 1
 [ "$(sed -n '2p' <<<"$out")" = "true" ] || exit 1
 [ "$(sed -n '3p' <<<"$out")" = "true" ] || exit 1
 [ "$(sed -n '4p' <<<"$out")" = "true" ] || exit 1
 [ "$(sed -n '5p' <<<"$out")" = "false" ] || exit 1
 [ "$(sed -n '6p' <<<"$out")" = "true" ] || exit 1
-out=$(NIFT_NO_PROCESS=1 "$NIFT_BIN" run "$t/s.f")
+out=$(NIFT_NO_PROCESS=1 "$NIFT_BIN" "$t/s.f")
 [ "$(sed -n '2p' <<<"$out")" = "const x=1;const y=2" ] || exit 1
 printf 'PASS v4.4 native script-land Minify++\n'

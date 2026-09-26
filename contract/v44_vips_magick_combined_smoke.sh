@@ -32,7 +32,7 @@ if(magick.available()) {
   print("magick-size:" + id.width + "x" + id.height)
 }
 F
-out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+out=$(cd "$t/site" && "$NIFT_BIN" t.f)
 avail_vips="$(sed -n '2p' <<<"$out")"
 avail_magick="$(sed -n '4p' <<<"$out")"
 [ "$avail_vips" = "true" ] || [ "$avail_vips" = "false" ] || { echo "$out" >&2; exit 1; }
@@ -43,7 +43,7 @@ grep -q '^false$' <<<"$out" || { echo "$out" >&2; exit 1; }
 grep -qE '^vips-exit:[0-9]+$' <<<"$out" || { echo "$out" >&2; exit 1; }
 if command -v magick >/dev/null 2>&1; then
   magick -size 32x32 xc:red "$t/site/assets/base.png" 2>/dev/null
-  out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+  out=$(cd "$t/site" && "$NIFT_BIN" t.f)
   grep -q '^true$' <<<"$out" || { echo "$out" >&2; exit 1; }
   grep -q '^magick-size:64x' <<<"$out" || exit 1
 else
@@ -56,5 +56,5 @@ cat > "$t/site/priv.f" <<'F'
 print(vips_guard)
 print(magick_run)
 F
-if (cd "$t/site" && "$NIFT_BIN" run priv.f >/dev/null 2>&1); then echo "private helper leaked" >&2; exit 1; fi
+if (cd "$t/site" && "$NIFT_BIN" priv.f >/dev/null 2>&1); then echo "private helper leaked" >&2; exit 1; fi
 printf 'PASS v4.4 vips + imagemagick combined\n'

@@ -8,8 +8,8 @@
 set -euo pipefail
 : "${NIFT_BIN:?}"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-run(){ printf '%s\n' "$1" > "$T/t.nift"; "$NIFT_BIN" run "$T/t.nift"; }
-must_error(){ printf '%s\n' "$1" > "$T/e.nift"; if "$NIFT_BIN" run "$T/e.nift" >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
+run(){ printf '%s\n' "$1" > "$T/t.nift"; "$NIFT_BIN" "$T/t.nift"; }
+must_error(){ printf '%s\n' "$1" > "$T/e.nift"; if "$NIFT_BIN" "$T/e.nift" >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
 
 # --- basic expression values ---
 [[ "$(run 'x := 5
@@ -32,7 +32,7 @@ print(post.status)
 print(post.status.to_int())
 print(type(post.status))
 NIFT
-[[ "$("$NIFT_BIN" run "$T/e.nift")" == $'Published\n1\nenum' ]]
+[[ "$("$NIFT_BIN" "$T/e.nift")" == $'Published\n1\nenum' ]]
 
 # --- nesting ---
 [[ "$(run 'x := 2
@@ -99,7 +99,7 @@ close(st)
 print(open("o.jsonl"))
 NIFT
 # Run from the temp dir so the relative o.jsonl fixture stays out of the repo root.
-[[ "$(cd "$T" && "$NIFT_BIN" run ser.nift)" == $'{"title":"Hello","status":1}\n{"title":"Hello","status":1}' ]]
+[[ "$(cd "$T" && "$NIFT_BIN" ser.nift)" == $'{"title":"Hello","status":1}\n{"title":"Hello","status":1}' ]]
 
 # --- template parity ---
 T2="$T/proj"

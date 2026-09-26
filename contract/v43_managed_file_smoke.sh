@@ -15,12 +15,12 @@ print(f.modified())
 f.save()
 f.close()
 NIFT
-[[ "$(cd "$td" && "$NIFT" run edit.nift)" == $'true\none TARGET\ntrue' ]]
+[[ "$(cd "$td" && "$NIFT" edit.nift)" == $'true\none TARGET\ntrue' ]]
 [[ "$(cat "$td/x.txt")" == $'one DONE!\nsecond' ]]
 # Exact-one safety and host cleanup leave the filesystem untouched.
 printf 'f := file("x.txt")\nf.open("rw")\nf.replace_once("missing", "bad")\n' > "$td/bad.nift"
-! (cd "$td" && "$NIFT" run bad.nift >/dev/null 2>&1)
+! (cd "$td" && "$NIFT" bad.nift >/dev/null 2>&1)
 ! grep -q bad "$td/x.txt"
 printf 'f := file("x.txt")\nf.open("rw")\nf.append("UNSAVED")\n' > "$td/leak.nift"
-! (cd "$td" && "$NIFT" run leak.nift >/dev/null 2>&1)
+! (cd "$td" && "$NIFT" leak.nift >/dev/null 2>&1)
 ! grep -q UNSAVED "$td/x.txt"

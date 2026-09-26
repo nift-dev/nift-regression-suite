@@ -25,7 +25,7 @@ print(html)
 cd("$t/tree/a/deep")
 print(exists("../one.o"))
 F
-out=$($NIFT_BIN run "$t/test.f")
+out=$($NIFT_BIN "$t/test.f")
 [[ "$out" == *$'3\n3\n2\n2\n2\n2'* ]] || { printf '%s\n' "$out" >&2; exit 1; }
 [[ "$out" == *'c,a'* ]] || { printf '%s\n' "$out" >&2; exit 1; }
 [[ "$out" == *$'\n2\n'* ]] || { printf '%s\n' "$out" >&2; exit 1; }

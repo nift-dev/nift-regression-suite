@@ -14,7 +14,7 @@ cat > "$t/site/imp.f" <<'F'
 @import("imagemagick")
 print(magick.available())
 F
-imp_out=$(cd "$t/site" && "$NIFT_BIN" run imp.f)
+imp_out=$(cd "$t/site" && "$NIFT_BIN" imp.f)
 if [ "$imp_out" != "true" ]; then
   if [ "$imp_out" != "false" ]; then echo "unexpected: $imp_out" >&2; exit 1; fi
   echo "magick executable unavailable; skipping live pipeline"
@@ -43,7 +43,7 @@ print(magick.identify("out/missing.png").ok)
 print(magick.available())
 print(magick.version() != "")
 F
-out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+out=$(cd "$t/site" && "$NIFT_BIN" t.f)
 [ "$(sed -n '1p' <<<"$out")" = "true" ] || exit 1
 [ "$(sed -n '2p' <<<"$out")" = "200x150 PNG" ] || exit 1
 [ "$(sed -n '3p' <<<"$out")" = "true" ] || exit 1
@@ -59,5 +59,5 @@ cat > "$t/site/priv.f" <<'F'
 @import("imagemagick")
 print(magick_run)
 F
-if (cd "$t/site" && "$NIFT_BIN" run priv.f >/dev/null 2>&1); then echo "private helper leaked" >&2; exit 1; fi
+if (cd "$t/site" && "$NIFT_BIN" priv.f >/dev/null 2>&1); then echo "private helper leaked" >&2; exit 1; fi
 printf 'PASS v4.4 imagemagick package -> magick export\n'

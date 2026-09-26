@@ -26,7 +26,7 @@ t := track("about", "About", "templates/main.html")
 print(t.ok)
 print(tracked().join(","))
 F
-out=$(cd "$t/site" && "$NIFT_BIN" run auto.f)
+out=$(cd "$t/site" && "$NIFT_BIN" auto.f)
 [ "$out" = "$t/site
 true
 /
@@ -46,7 +46,7 @@ u := untrack("about")
 print(u.ok)
 print(tracked().join(","))
 F
-out2=$(cd "$t/site" && "$NIFT_BIN" run auto2.f)
+out2=$(cd "$t/site" && "$NIFT_BIN" auto2.f)
 [ "$out2" = "about
 true
 0
@@ -57,8 +57,8 @@ true
 /" ] || { printf '%s\n' "$out2" >&2; exit 1; }
 # build_repair succeeds on a clean project
 printf 'print(build_repair().ok)\n' > "$t/site/repair.f"
-[ "$(cd "$t/site" && "$NIFT_BIN" run repair.f)" = "true" ] || exit 1
+[ "$(cd "$t/site" && "$NIFT_BIN" repair.f)" = "true" ] || exit 1
 # script stdout must not carry build progress/summary noise
 printf 'print(build().ok)\n' > "$t/site/clean.f"
-[ "$(cd "$t/site" && "$NIFT_BIN" run clean.f)" = "true" ] || exit 1
+[ "$(cd "$t/site" && "$NIFT_BIN" clean.f)" = "true" ] || exit 1
 printf 'PASS v4.4 automation\n'

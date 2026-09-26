@@ -9,9 +9,9 @@ NIFT_BIN="${NIFT_BIN:?}"
 td="$(mktemp -d)"; trap 'rm -rf "$td"' EXIT
 cd "$td"
 
-run(){ printf '%s\n' "$1" > t.nift; "$NIFT_BIN" run t.nift; }
+run(){ printf '%s\n' "$1" > t.nift; "$NIFT_BIN" t.nift; }
 evalx(){ "$NIFT_BIN" eval "$1"; }
-must_error(){ if "$NIFT_BIN" run <(printf '%s\n' "$1") >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
+must_error(){ if "$NIFT_BIN" <(printf '%s\n' "$1") >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
 
 # --- string surface: empty + length across run/eval ---
 [[ "$(run 'print("".empty()); print("x".empty()); print("".length()); print("x".length())')" == $'true\nfalse\n0\n1' ]]

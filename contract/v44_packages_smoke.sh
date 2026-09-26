@@ -7,7 +7,7 @@ printf '{"name":"demo","entry":"src/main.f"}\n' > "$t/pkg/manifest.json"
 printf 'answer := 42\nexport(answer)\n' > "$t/pkg/src/main.f"
 (cd "$t/site" && "$NIFT_BIN" add "$t/pkg" >/dev/null)
 printf '@import("demo")\nprint(answer)\n' > "$t/site/test.f"
-[[ "$(cd "$t/site" && "$NIFT_BIN" run test.f)" == 42 ]]
+[[ "$(cd "$t/site" && "$NIFT_BIN" test.f)" == 42 ]]
 grep -q '"demo"' "$t/site/manifest.json"
 grep -q '"commit": "local"' "$t/site/.nift/packages.lock.json"
 (cd "$t/site" && "$NIFT_BIN" remove demo)

@@ -16,7 +16,7 @@ print(exists("d/x"))
 whole := open("d/x")
 return whole.substr(0, 5)
 NIFT
-out=$(cd "$TMP" && "$NIFT_BIN" run io.nift)
+out=$(cd "$TMP" && "$NIFT_BIN" io.nift)
 [[ "$out" == $'alpha\nbeta\ntrue\nalpha' ]]
 cat > "$TMP/vals" <<'EOFV'
 true 7 2.5 "x" [1,2]
@@ -31,4 +31,4 @@ a := s.read_val()
 print(a.join(":"))
 close(s)
 NIFT
-[[ "$(cd "$TMP" && "$NIFT_BIN" run vals.nift)" == $'true\n7\n2.5\nx\n1:2' ]]
+[[ "$(cd "$TMP" && "$NIFT_BIN" vals.nift)" == $'true\n7\n2.5\nx\n1:2' ]]

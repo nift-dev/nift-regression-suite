@@ -19,8 +19,8 @@ printf '# Advanced\n' > content/docs/advanced.md
 printf '# Guide\n' > content/docs/advanced/guide.md
 printf '# Basics\n' > content/docs/basics.md
 
-run(){ printf '%s\n' "$1" > t.nift; "$NIFT_BIN" run t.nift; }
-must_error(){ printf '%s\n' "$1" > e.nift; if "$NIFT_BIN" run e.nift >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
+run(){ printf '%s\n' "$1" > t.nift; "$NIFT_BIN" t.nift; }
+must_error(){ printf '%s\n' "$1" > e.nift; if "$NIFT_BIN" e.nift >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
 
 [[ "$(run 'print(page("docs/advanced/guide").parent.title)')" == Advanced ]]
 [[ "$(run 'print(page("/").parent)')" == null ]]

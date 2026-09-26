@@ -27,7 +27,7 @@ print(sqlite.query(db, "SELECT ? AS v", true).rows[0].v)
 print(sqlite.query(db, "SELECT ? AS v", 42).rows[0].v)
 print(sqlite.query(db, "SELECT ? AS v", "DROP TABLE x --").rows[0].v)
 F
-  out=$(cd "$t/site" && "$NIFT_BIN" run s.f)
+  out=$(cd "$t/site" && "$NIFT_BIN" s.f)
   [ "$(sed -n '1p' <<<"$out")" = "hello" ] || { echo "$out" >&2; exit 1; }
   [ "$(sed -n '2p' <<<"$out")" = "a?b" ] || exit 1
   [ "$(sed -n '3p' <<<"$out")" = "O'Brien" ] || exit 1
@@ -63,7 +63,7 @@ m := mysql.open({"host": "h", "user": "u", "database": "d"})
 print(mysql.query(m, "SELECT $1, $10, 'lit $1', \"id $1\" FROM t WHERE x = $1", "A").ok)
 print(mysql.query(m, "SELECT $2, $1 FROM t", "A", "B").ok)
 F
-out=$(cd "$t/site" && PATH="$t/bin:$PATH" "$NIFT_BIN" run b.f)
+out=$(cd "$t/site" && PATH="$t/bin:$PATH" "$NIFT_BIN" b.f)
 for i in 1 2 3 4 5 6 7; do [ "$(sed -n "${i}p" <<<"$out")" = "true" ] || { echo "$out" >&2; exit 1; }; done
 grep -q 'SELECT .A., \$10, .lit \$1., .id \$1. FROM t WHERE x = .A.' <<<"$(cat "$FAKE_LOG")" || { echo "pg \$1/\$10 corruption" >&2; cat "$FAKE_LOG" >&2; exit 1; }
 grep -q "SELECT 'B', 'A' FROM t" <<<"$(cat "$FAKE_LOG")" || exit 1

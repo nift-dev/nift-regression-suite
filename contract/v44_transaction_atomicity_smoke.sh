@@ -27,7 +27,7 @@ r := sqlite.query(db, "SELECT * FROM t")
 print(r.rows.size())
 print(r.rows[0].name)
 F
-  out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+  out=$(cd "$t/site" && "$NIFT_BIN" t.f)
   [ "$(sed -n '1p' <<<"$out")" = "true" ] || { echo "$out" >&2; exit 1; }
   [ "$(sed -n '2p' <<<"$out")" = "true" ] || exit 1
   [ "$(sed -n '3p' <<<"$out")" = "false" ] || { echo "$out" >&2; exit 1; }
@@ -61,7 +61,7 @@ print(postgres.transaction(db, ["INSERT INTO t VALUES(1)", "INSERT INTO t VALUES
 m := mysql.open({"host": "h", "user": "u", "database": "d"})
 print(mysql.transaction(m, ["INSERT INTO t VALUES(1)", "INSERT INTO t VALUES(2)"]).ok)
 F
-out=$(cd "$t/site" && PATH="$t/bin:$PATH" "$NIFT_BIN" run atm.f)
+out=$(cd "$t/site" && PATH="$t/bin:$PATH" "$NIFT_BIN" atm.f)
 [ "$(sed -n '1p' <<<"$out")" = "true" ] || { echo "$out" >&2; exit 1; }
 [ "$(sed -n '2p' <<<"$out")" = "true" ] || exit 1
 psql_line=$(grep '^PSQL ' "$FAKE_LOG" | tail -1)

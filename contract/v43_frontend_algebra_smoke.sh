@@ -7,8 +7,8 @@
 set -euo pipefail
 NIFT_BIN="${NIFT_BIN:?}"
 td="$(mktemp -d)"; trap 'rm -rf "$td"' EXIT
-run(){ printf '%s\n' "$1" > "$td/t.nift"; "$NIFT_BIN" run "$td/t.nift"; }
-run_err(){ if "$NIFT_BIN" run <(printf '%s\n' "$1") >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
+run(){ printf '%s\n' "$1" > "$td/t.nift"; "$NIFT_BIN" "$td/t.nift"; }
+run_err(){ if "$NIFT_BIN" <(printf '%s\n' "$1") >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
 P='[{"n":"a","x":1,"tag":"a","tags":["a","b"],"featured":false,"date":2},{"n":"b","x":2,"tag":"b","tags":["b"],"featured":true,"date":1},{"n":"c","x":1,"tag":"a","tags":["a","a"],"featured":true,"date":3}]'
 
 # --- object algebra ---

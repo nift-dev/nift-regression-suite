@@ -65,12 +65,12 @@ rows := sqlite.query(db, "SELECT * FROM responses")
 print(rows.rows.size())
 print(rows.rows[0].body)
 EOF
-out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+out=$(cd "$t/site" && "$NIFT_BIN" t.f)
 [ "$out" = $'from-api\na=1; b=2\ndeleted\ntrue\n1\nfrom-api' ] || { printf 'unexpected:\n%s\n' "$out" >&2; exit 1; }
 # Private helpers of neither package are visible to the importer.
 for pkg in curl sqlite; do
   if [ "$pkg" = curl ]; then helper=curl_parse_headers; else helper=sqlite_bind; fi
   printf '@import("%s")\nprint(%s)\n' "$pkg" "$helper" > "$t/site/p.f"
-  if (cd "$t/site" && "$NIFT_BIN" run p.f >/dev/null 2>&1); then echo "private $pkg helper leaked" >&2; exit 1; fi
+  if (cd "$t/site" && "$NIFT_BIN" p.f >/dev/null 2>&1); then echo "private $pkg helper leaked" >&2; exit 1; fi
 done
 printf 'PASS v4.4 curl + sqlite combined\n'

@@ -44,7 +44,7 @@ print(rc.conn.size() > 0)
 print("redis-version:")
 print(redis.version() != "")
 F
-out=$(cd "$t/site" && "$NIFT_BIN" run t.f)
+out=$(cd "$t/site" && "$NIFT_BIN" t.f)
 grep -qE '^(true|false)$' <<<"$out" || exit 1
 grep -qE '^(true|false)$' <<<"$out" || exit 1
 grep -qE '^(true|false)$' <<<"$out" || exit 1
@@ -65,7 +65,7 @@ print(postgres_literal)
 print(mysql_bind)
 print(redis_copy)
 F
-if (cd "$t/site" && "$NIFT_BIN" run priv.f >/dev/null 2>&1); then echo "private helper leaked" >&2; exit 1; fi
+if (cd "$t/site" && "$NIFT_BIN" priv.f >/dev/null 2>&1); then echo "private helper leaked" >&2; exit 1; fi
 # Redis live round-trip only when a reachable server answers (db 15, isolated).
 if timeout 3 redis-cli -h 127.0.0.1 -p 6379 -n 15 ping 2>/dev/null | grep -q PONG; then
   cat > "$t/site/r.f" <<'F'
@@ -77,7 +77,7 @@ print(redis.exists(client, "nift:contract").data)
 print(redis.del(client, "nift:contract").data)
 print(type(redis.get(client, "nift:missing").data))
 F
-  out=$(cd "$t/site" && "$NIFT_BIN" run r.f)
+  out=$(cd "$t/site" && "$NIFT_BIN" r.f)
   [ "$(sed -n '1p' <<<"$out")" = "true" ] || exit 1
   [ "$(sed -n '2p' <<<"$out")" = "v" ] || exit 1
   [ "$(sed -n '3p' <<<"$out")" = "1" ] || exit 1

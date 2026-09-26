@@ -7,8 +7,8 @@
 set -euo pipefail
 : "${NIFT_BIN:?}"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-run(){ printf '%s\n' "$1" > "$T/t.nift"; "$NIFT_BIN" run "$T/t.nift"; }
-must_error(){ printf '%s\n' "$1" > "$T/e.nift"; if "$NIFT_BIN" run "$T/e.nift" >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
+run(){ printf '%s\n' "$1" > "$T/t.nift"; "$NIFT_BIN" "$T/t.nift"; }
+must_error(){ printf '%s\n' "$1" > "$T/e.nift"; if "$NIFT_BIN" "$T/e.nift" >/dev/null 2>&1; then echo "expected error: $1" >&2; return 1; fi; }
 
 # --- type() / is_*() ---
 [[ "$(run 'print(type(null));print(type(true));print(type(1));print(type(1.5));print(type("x"));print(type([1]));print(type({"a":1}));print(type(42.0))')" == $'null\nbool\nint\nfloat\nstring\narray\nobject\nint' ]]
@@ -82,7 +82,7 @@ print(Code.OK.to_int()); print(Code.Created.to_int()); print(Code.Missing.to_int
 print(State.Draft == State.Draft); print(State.Draft == 0); print(State.Draft == "Draft")
 print(State.Draft.to_string())
 NIFT
-[[ "$("$NIFT_BIN" run "$T/e.nift")" == $'Draft\n10\n11\nenum\ntrue\n200\n201\n404\ntrue\nfalse\nfalse\nDraft' ]]
+[[ "$("$NIFT_BIN" "$T/e.nift")" == $'Draft\n10\n11\nenum\ntrue\n200\n201\n404\ntrue\nfalse\nfalse\nDraft' ]]
 must_error 'enum Bad { A = 1, B = 1 }'
 must_error 'enum Bad { A, A }'
 must_error 'enum Bad { }'
@@ -90,6 +90,6 @@ cat > "$T/enum-neg.nift" <<'NIFT'
 enum T { A = -5, B, C = -2 }
 print(T.A.to_int()); print(T.B.to_int()); print(T.C.to_int())
 NIFT
-[[ "$("$NIFT_BIN" run "$T/enum-neg.nift")" == $'-5\n-4\n-2' ]]
+[[ "$("$NIFT_BIN" "$T/enum-neg.nift")" == $'-5\n-4\n-2' ]]
 
 echo 'final language contract passed'

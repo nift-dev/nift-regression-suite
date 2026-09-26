@@ -13,6 +13,6 @@ setenv("NIFT_V44_ENV", "yes")
 e := run("sh", "-c", "printf $NIFT_V44_ENV")
 if(e.stdout != "yes") { return "bad env" }
 F
-"$NIFT" run "$t/run.f" >/dev/null
-printf 'printf hello | tr a-z A-Z > %s/out\ncat %s/out\nexit\n' "$t" "$t" | "$NIFT" sh >"$t/shell" 2>/dev/null
+"$NIFT" "$t/run.f" >/dev/null
+printf 'printf hello | tr a-z A-Z > %s/out\ncat %s/out\nexit\n' "$t" "$t" | "$NIFT" >"$t/shell" 2>/dev/null
 grep -q HELLO "$t/shell"
