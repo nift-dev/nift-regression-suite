@@ -1,39 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
-NIFT_BIN=${NIFT_BIN:?set NIFT_BIN to the nift executable}
+NIFT=${NIFT_BIN:-${NIFT:-./nift}}
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 cat >"$TMP/atomics.f" <<'NIFT'
-fn(add_many(x, n)) {
-    i := 0
-    while(i < n) { x.fetch_add(1); i += 1 }
-    return true
-}
-fn(mark(flag)) { flag.store(true); return true }
+fn(inc_thread(x, n)) { i := 0; while(i < n) { x++; i += 1 }; return true }
+@fn[async](inc_async(x, n)) { i := 0; while(i < n) { x += 1; i += 1 }; return true }
 
-x := atomic<int>(0)
-a := thread(add_many, x, 750)
-b := thread(add_many, x, 750)
-c := async(add_many, x, 750)
-d := async(add_many, x, 750)
-a.join(); b.join(); await(c); await(d)
+x := atomic<int>(10)
 print(type(x))
+print(x)
+print(x++)
+print(++x)
+x += 5
+x -= 2
+x &= 6
+x |= 8
+x ^= 3
+x %= 5
+print(x)
+x = 17
+print(x)
+print(x + 2)
+print(x == 17)
 print(x.load())
-print(x.exchange(7))
-print(x.fetch_add(5))
-print(x.fetch_sub(2))
-print(x.compare_exchange(10, 99))
-print(x.load())
+
+counter := atomic<int>(0)
+a := thread(inc_thread, counter, 1000)
+b := thread(inc_thread, counter, 1000)
+c := inc_async(counter, 1000)
+d := inc_async(counter, 1000)
+a.join(); b.join()
+rc := await c
+rd := await d
+print(counter)
 
 flag := atomic<bool>(false)
-t := thread(mark, flag)
-t.join()
 print(type(flag))
-print(flag.load())
-print(flag.exchange(false))
-print(flag.compare_exchange(false, true))
+print(flag)
+flag = true
+print(flag)
 print(flag.load())
 NIFT
-out=$($NIFT_BIN "$TMP/atomics.f")
-[[ "$out" == $'atomic<int>\n3000\n3000\n7\n12\ntrue\n99\natomic<bool>\ntrue\ntrue\ntrue\ntrue' ]] || { printf 'unexpected atomic contract output:\n%s\n' "$out" >&2; exit 1; }
-echo 'v4.5 atomics contract passed'
+out=$($NIFT "$TMP/atomics.f")
+expected=$'atomic<int>\n10\n10\n12\n3\n17\n19\ntrue\n17\n4000\natomic<bool>\nfalse\ntrue\ntrue'
+[[ "$out" == "$expected" ]] || { printf 'unexpected atomics output:\n%s\n' "$out" >&2; exit 1; }
+
+if $NIFT -e 'x := atomic<int>(1.5)' >/dev/null 2>"$TMP/err"; then exit 1; fi
+grep -q 'signed 64-bit integer' "$TMP/err"
+if $NIFT -e 'x := atomic<bool>(0)' >/dev/null 2>"$TMP/err"; then exit 1; fi
+grep -q 'initial value must be bool' "$TMP/err"
+
+echo 'v4.5 atomics smoke passed'
