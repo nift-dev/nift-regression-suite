@@ -41,82 +41,100 @@ run_module "historical + ruthless regression contract" \
   bash -c "cd '$LEGACY' && NIFT_BIN='$NIFT_BIN' bash scripts/run-tests.sh"
 
 # Newer contract modules are implementation-independent: each creates temporary
-# Nift projects and interacts only through the executable + documented project files.
-for test in \
-  json_schema_integration_smoke.sh \
-  parser_content_smoke.sh \
-  diagnostics_smoke.sh \
-  comments_smoke.sh \
-  json_binding_smoke.sh \
-  control_flow_smoke.sh \
-  collection_ops_smoke.sh \
-  pagination_smoke.sh \
-  requirements_smoke.sh \
-  path_alias_smoke.sh \
-  path_security_smoke.sh \
-  path_safety_smoke.sh \
-  metadata_safety_smoke.sh \
-  cross_feature_smoke.sh \
-  incremental_new_features_smoke.sh \
-  parameter_interpolation_smoke.sh \
-  contracts_smoke.sh \
-  persistence_concurrency_failure_smoke.sh \
-  filesystem_recovery_smoke.sh \
-  minify_integration_smoke.sh \
-  template_optional_smoke.sh \
-  init_targets_smoke.sh \
-  unreadable_source_smoke.sh \
-  json_six_forms_smoke.sh \
-  markup_directives_smoke.sh \
-  v41_template_variables_smoke.sh \
-  v41_language_smoke.sh \
-  v41_operator_smoke.sh \
-  v41_inject_dependency.sh \
-  v41_duplicate_key_smoke.sh \
-  v41_certification_adversarial.sh \
-  v42_structs_smoke.sh \
-  v42_numeric_literals_smoke.sh \
-  v43_language_smoke.sh \
-  v43_scripting_io_smoke.sh \
-  v43_scripting_inspection_smoke.sh \
-  v43_scripting_ergonomics_smoke.sh \
-  v43_managed_file_smoke.sh \
-  v43_managed_file_editing_smoke.sh \
-  v43_scripting_smoke.sh \
-  v43_typed_content_taxonomy_smoke.sh \
-  v43_frontend_algebra_smoke.sh \
-  v43_final_language_smoke.sh \
-  v43_object_expressions_smoke.sh \
-  v43_hierarchy_smoke.sh \
-  v43_mundane_surface_smoke.sh \
-  v44_language_foundation_smoke.sh \
-  v44_execution_shell_smoke.sh \
-  v44_packages_smoke.sh \
-  v44_automation_smoke.sh \
-  v44_hooks_smoke.sh \
-  v44_restricted_smoke.sh \
-  v44_package_hardening_smoke.sh \
-  v44_module_export_smoke.sh \
-  v44_sqlite_module_smoke.sh \
-  v44_curl_combined_smoke.sh \
-  v44_minify_native_smoke.sh \
-  v44_imagemagick_package_smoke.sh \
-  v44_vips_magick_combined_smoke.sh \
-  v44_database_packages_smoke.sh \
-  v44_transaction_atomicity_smoke.sh \
-  v44_parameter_binding_smoke.sh \
-  v44_executable_script_smoke.sh \
-  v44_shell_bare_command_smoke.sh \
-  v45_cli_invocation_smoke.sh \
-  v45_host_introspection_smoke.sh \
-  v45_target_smoke.sh \
-  v45_jobs_background_smoke.sh \
-  v45_job_control_smoke.sh \
-  v45_threads_smoke.sh \
-  v45_mutex_smoke.sh \
+# Nift projects and interacts only through the executable + documented artifacts.
+CONTRACT_TESTS=(
+  json_schema_integration_smoke.sh
+  parser_content_smoke.sh
+  diagnostics_smoke.sh
+  comments_smoke.sh
+  json_binding_smoke.sh
+  control_flow_smoke.sh
+  collection_ops_smoke.sh
+  pagination_smoke.sh
+  requirements_smoke.sh
+  path_alias_smoke.sh
+  path_security_smoke.sh
+  path_safety_smoke.sh
+  metadata_safety_smoke.sh
+  cross_feature_smoke.sh
+  incremental_new_features_smoke.sh
+  parameter_interpolation_smoke.sh
+  contracts_smoke.sh
+  persistence_concurrency_failure_smoke.sh
+  filesystem_recovery_smoke.sh
+  minify_integration_smoke.sh
+  template_optional_smoke.sh
+  init_targets_smoke.sh
+  unreadable_source_smoke.sh
+  json_six_forms_smoke.sh
+  markup_directives_smoke.sh
+  v41_template_variables_smoke.sh
+  v41_language_smoke.sh
+  v41_operator_smoke.sh
+  v41_inject_dependency.sh
+  v41_duplicate_key_smoke.sh
+  v41_certification_adversarial.sh
+  v42_structs_smoke.sh
+  v42_numeric_literals_smoke.sh
+  v43_language_smoke.sh
+  v43_scripting_io_smoke.sh
+  v43_scripting_inspection_smoke.sh
+  v43_scripting_ergonomics_smoke.sh
+  v43_managed_file_smoke.sh
+  v43_managed_file_editing_smoke.sh
+  v43_scripting_smoke.sh
+  v43_typed_content_taxonomy_smoke.sh
+  v43_frontend_algebra_smoke.sh
+  v43_final_language_smoke.sh
+  v43_object_expressions_smoke.sh
+  v43_hierarchy_smoke.sh
+  v43_mundane_surface_smoke.sh
+  v44_language_foundation_smoke.sh
+  v44_execution_shell_smoke.sh
+  v44_packages_smoke.sh
+  v44_automation_smoke.sh
+  v44_hooks_smoke.sh
+  v44_restricted_smoke.sh
+  v44_package_hardening_smoke.sh
+  v44_module_export_smoke.sh
+  v44_sqlite_module_smoke.sh
+  v44_curl_combined_smoke.sh
+  v44_minify_native_smoke.sh
+  v44_imagemagick_package_smoke.sh
+  v44_vips_magick_combined_smoke.sh
+  v44_database_packages_smoke.sh
+  v44_transaction_atomicity_smoke.sh
+  v44_parameter_binding_smoke.sh
+  v44_executable_script_smoke.sh
+  v44_shell_bare_command_smoke.sh
+  v45_cli_invocation_smoke.sh
+  v45_host_introspection_smoke.sh
+  v45_target_smoke.sh
+  v45_jobs_background_smoke.sh
+  v45_job_control_smoke.sh
+  v45_threads_smoke.sh
+  v45_mutex_smoke.sh
   v45_async_smoke.sh
   v45_ffi_smoke.sh
-do
+  v45_embed_consumer_smoke.sh
+  v45_integration_smoke.sh
+)
+
+# Fail closed when a contract file is added but not wired into the canonical runner.
+declare -A WIRED=()
+for test in "${CONTRACT_TESTS[@]}"; do WIRED["$test"]=1; done
+ORPHANS=()
+for path in "$ROOT"/contract/*.sh; do
+  test="$(basename "$path")"
+  [[ ${WIRED[$test]+yes} ]] || ORPHANS+=("$test")
+done
+if (( ${#ORPHANS[@]} )); then
+  printf 'FAIL: contract modules not wired into run-contract.sh:\n' >&2
+  printf '  %s\n' "${ORPHANS[@]}" >&2
+  exit 2
+fi
+
+for test in "${CONTRACT_TESTS[@]}"; do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done
 
