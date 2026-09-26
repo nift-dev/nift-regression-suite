@@ -115,6 +115,7 @@ for test in \
   v45_threads_smoke.sh \
   v45_mutex_smoke.sh \
   v45_async_smoke.sh
+  v45_ffi_smoke.sh
 do
   run_module "contract/$test" env NIFT_BIN="$NIFT_BIN" bash "$ROOT/contract/$test"
 done
