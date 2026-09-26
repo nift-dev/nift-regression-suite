@@ -88,4 +88,40 @@ out=$(cd "$t" && PATH="$BIN:$PATH" "$NIFT_ABS" nz.f)
 out=$(cd "$t" && "$NIFT_ABS" complete "./de")
 [ "$out" = "./deploy.f" ] || { echo "$out" >&2; exit 1; }
 
-printf 'PASS v4.4 executable .f scripts\n'
+
+# v4.5 certification of cmd/args/cwd/env and first-line-only shebang semantics.
+cat > "$t/certify.f" <<'F'
+#!/usr/bin/env nift
+print(cmd)
+print(args.join("|"))
+print(pwd())
+print(getenv("NIFT_CT_TEST"))
+F
+chmod +x "$t/certify.f"
+out=$(cd "$t" && PATH="$BIN:$PATH" NIFT_CT_TEST=certified ./certify.f one two)
+[ "$(sed -n '1p' <<<"$out")" = './certify.f' ]
+[ "$(sed -n '2p' <<<"$out")" = 'one|two' ]
+[ "$(sed -n '3p' <<<"$out")" = "$t" ]
+[ "$(sed -n '4p' <<<"$out")" = 'certified' ]
+cat > "$t/not-first.f" <<'F'
+print("before")
+#!/usr/bin/env nift
+print("after")
+F
+[ "$("$NIFT_ABS" "$t/not-first.f")" = $'before\nafter' ]
+cat > "$t/fail-shebang.f" <<'F'
+#!/usr/bin/env nift
+break
+F
+chmod +x "$t/fail-shebang.f"
+! (cd "$t" && PATH="$BIN:$PATH" ./fail-shebang.f >/dev/null 2>&1)
+case "$(uname -s)" in MINGW*|MSYS*) ;; *)
+cat > "$t/signal.f" <<'F'
+#!/usr/bin/env nift
+i := 0
+while(i < 1000000000) { i += 1 }
+F
+chmod +x "$t/signal.f"
+(cd "$t"; PATH="$BIN:$PATH" ./signal.f >/dev/null 2>&1 & pid=$!; sleep 0.05; kill -TERM "$pid"; set +e; wait "$pid"; rc=$?; set -e; [ "$rc" -eq 143 ])
+;; esac
+echo 'PASS v4.5 executable script contract'
