@@ -114,6 +114,7 @@ CONTRACT_TESTS=(
   v45_job_control_smoke.sh
   v45_threads_smoke.sh
   v45_mutex_smoke.sh
+  v45_atomics_smoke.sh
   v45_async_smoke.sh
   v45_ffi_smoke.sh
   v45_embed_consumer_smoke.sh
