@@ -4,15 +4,27 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NIFT_BIN="${NIFT_BIN:-${1:-nift}}"
 
-if command -v "$NIFT_BIN" >/dev/null 2>&1; then
-  NIFT_BIN="$(command -v "$NIFT_BIN")"
-elif [[ -x "$NIFT_BIN" ]]; then
+if [[ "$NIFT_BIN" == */* && -x "$NIFT_BIN" ]]; then
   NIFT_BIN="$(cd "$(dirname "$NIFT_BIN")" && pwd)/$(basename "$NIFT_BIN")"
+elif command -v "$NIFT_BIN" >/dev/null 2>&1; then
+  NIFT_BIN="$(command -v "$NIFT_BIN")"
 else
   echo "FAIL: NIFT_BIN not found: $NIFT_BIN" >&2
   exit 2
 fi
 export NIFT_BIN
+
+# Contract modules deliberately change directory. Keep host-supplied artifact
+# paths stable across those directory changes, including the documented
+# NIFT_BIN=../nift/nift invocation from this repository.
+if [[ -n "${NIFT_EMBED_PREFIX:-}" ]]; then
+  if [[ ! -d "$NIFT_EMBED_PREFIX" ]]; then
+    echo "FAIL: NIFT_EMBED_PREFIX not found: $NIFT_EMBED_PREFIX" >&2
+    exit 2
+  fi
+  NIFT_EMBED_PREFIX="$(cd "$NIFT_EMBED_PREFIX" && pwd)"
+  export NIFT_EMBED_PREFIX
+fi
 
 FAILS=0
 MODULES=0
