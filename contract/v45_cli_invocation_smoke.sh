@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-NIFT=${NIFT:-../nift/nift}
+NIFT=${NIFT:-${NIFT_BIN:-../nift/nift}}
 case "$NIFT" in /*) BIN="$NIFT";; *) BIN="$(pwd)/$NIFT";; esac
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
 cat > "$t/hello.f" <<'F'
