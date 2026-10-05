@@ -28,6 +28,11 @@ p=$(python3 -c 'print("("*8000+"7"+")"*8000)')
 [ "$(run "x := $p
 print(x)")" = 7 ] || { echo "paren nesting" >&2; exit 1; }
 
+# True nesting up to 64 is supported.
+[ "$(run "$(python3 -c 'print("print("+"!"*64+"true)")')")" = true ] || { echo "nesting 64" >&2; exit 1; }
+[ "$(run "fn(id(x)) { return x }
+print($(python3 -c 'print("id("*64+"1"+")"*64)'))")" = 1 ] || { echo "call nesting 64" >&2; exit 1; }
+
 # Operator semantics preserved.
 [ "$(run 'print(1 + 2 * 3 - 4)')" = 3 ] || { echo "precedence" >&2; exit 1; }
 [ "$(run 'print(20 - 5 - 3)')" = 12 ] || { echo "associativity" >&2; exit 1; }
