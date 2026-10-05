@@ -7,19 +7,22 @@ set -euo pipefail
 NIFT_BIN=${NIFT_BIN:?}
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
 mkdir -p "$t/site/.nift" "$t/evil"
-printf '{"name":"evil","entry":"../../escape.f"}\n' > "$t/evil/manifest.json"
+printf '{"name":"evil","version":"0.1.0","entry":"../../escape.f"}\n' > "$t/evil/manifest.json"
 printf 'print("pwned")\n' > "$t/escape.f"
 evil=$(cd "$t/site" && "$NIFT_BIN" add "$t/evil" 2>&1 || true)
-grep -q 'package entry escapes the package directory' <<<"$evil"
+grep -q 'manifest entry must be a contained relative .f path' <<<"$evil"
 mkdir -p "$t/pkg/src"
-printf '{"name":"demo","entry":"src/main.f"}\n' > "$t/pkg/manifest.json"
+printf '{"name":"demo","version":"0.1.0","entry":"src/main.f"}\n' > "$t/pkg/manifest.json"
 printf 'v := 1\nexport(v)\n' > "$t/pkg/src/main.f"
 (cd "$t/site" && "$NIFT_BIN" add "$t/pkg" >/dev/null 2>&1)
 dup=$(cd "$t/site" && "$NIFT_BIN" add "$t/pkg" 2>&1 || true)
 grep -q "already a dependency" <<<"$dup"
-mkdir -p "$t/site/.nift/packages/iso/src"
-printf '{"name":"iso","entry":"src/main.f"}\n' > "$t/site/.nift/packages/iso/manifest.json"
-printf 'secret_helper := "hidden"\n@fn(public_fn(x)){ return x + 1 }\nexport(public_fn)\n' > "$t/site/.nift/packages/iso/src/main.f"
+# v4.6 requires installed-package imports to carry a lock/identity entry, so
+# install `iso` through the real package command instead of hand-placing it.
+mkdir -p "$t/iso/src"
+printf '{"name":"iso","version":"0.1.0","entry":"src/main.f"}\n' > "$t/iso/manifest.json"
+printf 'secret_helper := "hidden"\n@fn(public_fn(x)){ return x + 1 }\nexport(public_fn)\n' > "$t/iso/src/main.f"
+(cd "$t/site" && "$NIFT_BIN" add "$t/iso" >/dev/null)
 printf '@import("iso")\nprint(public_fn(1))\n' > "$t/site/t.f"
 [ "$(cd "$t/site" && "$NIFT_BIN" t.f)" = "2" ] || exit 1
 printf '@import("iso")\nprint(secret_helper)\n' > "$t/site/t2.f"

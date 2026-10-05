@@ -3,7 +3,7 @@ set -euo pipefail
 NIFT_BIN=${NIFT_BIN:?}
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
 mkdir -p "$t/pkg/src" "$t/site/.nift"
-printf '{"name":"demo","entry":"src/main.f"}\n' > "$t/pkg/manifest.json"
+printf '{"name":"demo","version":"0.1.0","entry":"src/main.f"}\n' > "$t/pkg/manifest.json"
 printf 'answer := 42\nexport(answer)\n' > "$t/pkg/src/main.f"
 (cd "$t/site" && "$NIFT_BIN" add "$t/pkg" >/dev/null)
 printf '@import("demo")\nprint(answer)\n' > "$t/site/test.f"

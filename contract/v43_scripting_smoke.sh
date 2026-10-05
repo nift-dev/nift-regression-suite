@@ -57,7 +57,7 @@ export(increment)
 EOT
 cat > content/index.html <<'EOT'
 $[unrelated := 100]
-@import("content/lib/counter.nift")
+@import("lib/counter.nift")
 $[count],$[increment()],$[count]
 EOT
 "$NIFT" build --all >/dev/null
@@ -69,7 +69,7 @@ leak := secret_binding
 export(leak)
 EOT
 cat > content/index.html <<'EOT'
-$[secret_binding := 7]@import("content/lib/snoop.nift")
+$[secret_binding := 7]@import("lib/snoop.nift")
 EOT
 if "$NIFT" build --all >/dev/null 2>&1; then echo "import leaked caller scope" >&2; exit 1; fi
 
@@ -80,7 +80,7 @@ x := 1
 export(does_not_exist)
 EOT
 cat > content/index.html <<'EOT'
-@import("content/lib/missing.nift")$[marker := 5]$[marker]
+@import("lib/missing.nift")$[marker := 5]$[marker]
 EOT
 if "$NIFT" build --all >/dev/null 2>&1; then echo "missing-export import succeeded" >&2; exit 1; fi
 cat > content/lib/collide.nift <<'EOT'
@@ -88,7 +88,7 @@ value := 2
 export(value)
 EOT
 cat > content/index.html <<'EOT'
-$[value := 9]@import("content/lib/collide.nift")$[value]
+$[value := 9]@import("lib/collide.nift")$[value]
 EOT
 if "$NIFT" build --all >/dev/null 2>&1; then echo "colliding export import succeeded" >&2; exit 1; fi
 
@@ -97,7 +97,7 @@ cat > content/lib/badret.nift <<'EOT'
 return 5
 EOT
 cat > content/index.html <<'EOT'
-@import("content/lib/badret.nift")
+@import("lib/badret.nift")
 EOT
 if "$NIFT" build --all >/dev/null 2>&1; then echo "import value return succeeded" >&2; exit 1; fi
 cat > content/lib/early.nift <<'EOT'
@@ -107,7 +107,7 @@ return
 v = 9
 EOT
 cat > content/index.html <<'EOT'
-@import("content/lib/early.nift")$[v]
+@import("lib/early.nift")$[v]
 EOT
 "$NIFT" build --all >/dev/null
 [[ "$(B)" == *"8"* ]]
@@ -121,7 +121,7 @@ cat > content/cyc/b.nift <<'EOT'
 @import("a.nift")
 EOT
 cat > content/index.html <<'EOT'
-@import("content/cyc/a.nift")
+@import("cyc/a.nift")
 EOT
 if "$NIFT" build --all >/dev/null 2>&1; then echo "import cycle succeeded" >&2; exit 1; fi
 

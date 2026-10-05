@@ -26,6 +26,15 @@ if [[ -n "${NIFT_EMBED_PREFIX:-}" ]]; then
   export NIFT_EMBED_PREFIX
 fi
 
+# Optional expected candidate version (e.g. 4.6.0). When supplied by the hosted
+# workflow or a local release-validation run, the historical version assertion
+# checks it exactly; when absent, only a well-formed semantic version is
+# required. Never bake the current release number into historical modules.
+if [[ -n "${NIFT_EXPECT_VERSION:-}" ]]; then
+  NIFT_EXPECT_VERSION="${NIFT_EXPECT_VERSION#v}"
+  export NIFT_EXPECT_VERSION
+fi
+
 FAILS=0
 MODULES=0
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/nift-contract-suite.XXXXXX")"
@@ -131,6 +140,21 @@ CONTRACT_TESTS=(
   v45_ffi_smoke.sh
   v45_embed_consumer_smoke.sh
   v45_integration_smoke.sh
+  v46_bytes_ffi_smoke.sh
+  v46_bytes_smoke.sh
+  v46_cli_smoke.sh
+  v46_concurrency_smoke.sh
+  v46_diagnostics_smoke.sh
+  v46_embed_consumer_smoke.sh
+  v46_exact_numbers_smoke.sh
+  v46_filesystem_types_smoke.sh
+  v46_import_ownership_smoke.sh
+  v46_output_channels_smoke.sh
+  v46_package_graph_smoke.sh
+  v46_package_metadata_smoke.sh
+  v46_recoverable_errors_smoke.sh
+  v46_runtime_utilities_smoke.sh
+  v46_streams_smoke.sh
 )
 
 # Fail closed when a contract file is added but not wired into the canonical runner.

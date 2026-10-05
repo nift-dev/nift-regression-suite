@@ -6,7 +6,10 @@ set -euo pipefail
 NIFT_BIN=${NIFT_BIN:?}
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
 mkdir -p "$t/site/.nift/packages/vips/src"
-printf '{"name":"vips","entry":"src/main.f"}\n' > "$t/site/.nift/packages/vips/manifest.json"
+# v4.6 requires an installed package to be declared and locked before `@import`.
+printf '{"dependencies":{"vips":{"source":"./vips","ref":"local"}}}\n' > "$t/site/manifest.json"
+printf '{"vips":{"source":"./vips","requested":"local","commit":"local"}}\n' > "$t/site/.nift/packages.lock.json"
+printf '{"name":"vips","version":"0.1.0","entry":"src/main.f"}\n' > "$t/site/.nift/packages/vips/manifest.json"
 cat > "$t/site/.nift/packages/vips/src/main.f" <<'F'
 @fn(scale_helper(x)) { return x * 2 }
 @struct(vips_lib) { resize := (w, h) => { return {"w": scale_helper(w), "h": scale_helper(h)} } }

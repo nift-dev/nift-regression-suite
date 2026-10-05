@@ -67,11 +67,20 @@ jobs:
           path: nift-packages/imagemagick
       - name: Build Nift
         run: make -C nift -j2 nift
+      - name: Stage embedding prefix
+        run: |
+          make -C nift embed-prefix
+          echo "NIFT_EMBED_PREFIX=$PWD/nift/dist/embed-prefix" >> "$GITHUB_ENV"
       - name: Record tested revisions
         run: |
           echo "Nift source: $(git -C nift rev-parse HEAD)"
           echo "Nift version: $(./nift/nift version)"
           echo "Regression suite: $(git -C regression-suite rev-parse HEAD)"
+          # Derive the expected candidate version from the Nift checkout so the
+          # historical version assertion is release-aware rather than baked in.
+          NIFT_EXPECT_VERSION="$(grep -m1 -oE 'v[0-9]+\.[0-9]+\.[0-9]+' nift/ReleaseNotes.md | tr -d v || true)"
+          echo "Expected Nift version: ${NIFT_EXPECT_VERSION:-<unset, well-formed only>}"
+          echo "NIFT_EXPECT_VERSION=$NIFT_EXPECT_VERSION" >> "$GITHUB_ENV"
       - name: Run independent contract suite
         run: |
           set +e

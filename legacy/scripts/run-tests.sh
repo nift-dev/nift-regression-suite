@@ -27,7 +27,17 @@ export NIFT_TEST_VALUE='hello-env'
 export NIFT_TEST_LITERAL='@content $[title] <tag>& literal'
 
 TESTS=$((TESTS+1)); "$NIFT_BIN" version >"$TMP_ROOT/version.log" 2>&1 || fail 'nift version failed'
-grep -Fq 'v4.6.0' "$TMP_ROOT/version.log" || fail 'nift version did not report v4.6.0'
+# The candidate version is a suite input, not baked into this historical module:
+# the caller (hosted workflow or a local release-validation run) supplies the
+# expected development/release version; otherwise only a well-formed semantic
+# version is required. This avoids re-hardcoding the latest release here and
+# failing on every future version bump.
+if [[ -n "${NIFT_EXPECT_VERSION:-}" ]]; then
+  EXPECTED_VERSION="v${NIFT_EXPECT_VERSION#v}"
+  grep -Fq "$EXPECTED_VERSION" "$TMP_ROOT/version.log" || fail "nift version did not report $EXPECTED_VERSION"
+else
+  grep -Eq 'v[0-9]+\.[0-9]+\.[0-9]+' "$TMP_ROOT/version.log" || fail 'nift version did not report a semantic version'
+fi
 TESTS=$((TESTS+1)); "$NIFT_BIN" commands >"$TMP_ROOT/commands.log" 2>&1 || fail 'nift commands failed'
 grep -Eq '^\s{2}build\b' "$TMP_ROOT/commands.log" || fail 'nift commands missing build entry'
 

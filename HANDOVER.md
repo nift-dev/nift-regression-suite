@@ -49,8 +49,12 @@ log.
   institutional context, including failure families, parameter
   interpolation coverage, and production-readiness responsibilities.
 
-The current runner contains the historical/ruthless module plus 42 focused
-contract entries, for 43 contract executions total. The v4.3 layer includes an independent typed-content/taxonomy contract covering schema/taxonomy config, front matter, type conflicts, project discovery and agent-facing `nift eval` queries. The focused layer now includes the v4.0.3
+The current runner contains the historical/ruthless module plus the focused
+contract entries for every release layer through v4.6 (see the v4.6
+reconciliation note at the end of this document for the current count). The
+v4.3 layer includes an independent typed-content/taxonomy contract covering
+schema/taxonomy config, front matter, type conflicts, project discovery and
+agent-facing `nift eval` queries. The focused layer now includes the v4.0.3
 pagination and composable collection-operation contracts, the v4.0.4 long-running
 filesystem-recovery contract, the 4.0.2 initializer/platform-target contract, the
 v4.0.9 unreadable-source contract (unreadable content/@input/template must
@@ -183,3 +187,84 @@ campaign and the defects found by the independent review:
 
 ## Nift v4.2 CP26
 The independent contract now follows the v4.2 function-program return grammar and adds a black-box struct module covering constructors, private methods, stateful methods, reference aliasing, shallow `copy`, and recursive `deepcopy`. Historical v4.1 release evidence remains historical; executable-current contract syntax was advanced deliberately.
+
+## Nift v4.6 regression-suite reconciliation (2026-10-05)
+
+The suite had drifted: it was last certified against v4.5.0 while a large amount
+of v4.6 user-visible behavior landed. Reconciliation against the v4.5.0
+(`560863b`) -> v4.6 candidate (`6ee0499`) delta repaired the stale contract
+surface and added a dedicated v4.6 external contract layer.
+
+### Failing tests classified
+
+- **Package fixtures** (`v44_packages_smoke`, `v44_package_hardening_smoke`,
+  `v44_module_export_smoke`): **INTENTIONAL CONTRACT CHANGE**. v4.6 `bed5d1f`
+  requires installable package identity `name + version + entry`
+  (`docs/packages/manifest.schema.json`, in-repo tests/schema updated together).
+  Fixtures gained a legitimate `version`; their original behavioral purpose is
+  intact. The hardening `iso` fixture now installs through `nift add` because
+  v4.6 also requires a declared/locked dependency for package imports (the
+  module-export fixture writes the site manifest + v2 lock directly).
+- **Version assertion** (`legacy/scripts/run-tests.sh`): **VERSION-SPECIFIC
+  EXPECTATION / STALE TEST INFRASTRUCTURE**. The exact release number is no
+  longer baked into the historical module; `NIFT_EXPECT_VERSION` (supplied by
+  the hosted workflow from the Nift checkout, or a local release-validation run)
+  is asserted when present, otherwise only a well-formed semantic version is
+  required. `run-contract.sh` exports it; `contract.yml` derives it from
+  `nift/ReleaseNotes.md`.
+- **`v43_scripting_smoke` import** (`@import("content/lib/counter.nift")` from
+  `content/index.html`): **INTENTIONAL CONTRACT CHANGE**. Old v4.5 behavior
+  probed `caller_dir/path` and fell back to the raw/project-root path. `79f993c`
+  ("preserve relative import ownership") replaced that with unconditional
+  resolution from the defining source, with no root fallback.
+
+### Import semantics decision (do not rediscover)
+
+`src/ParserScript.cpp` classifies an import argument as a package name only when
+it has **no slash and no extension**; everything else is path-shaped and resolves
+once from the importing source's base directory:
+
+| import                  | meaning |
+|-------------------------|---------|
+| `import("foo")`         | package-store import |
+| `import("foo.f")`       | source-relative (has extension) |
+| `import("dir/foo.f")`   | source-relative (has slash) |
+| `import("./foo.f")`     | source-relative from defining source |
+| `import("../foo.f")`    | source-relative from defining source |
+| `import("/abs/foo.f")`  | absolute host path (confinement applies) |
+
+Project-root-relative resolution / fallback is **intentionally removed** in v4.6.
+`content/lib/counter.nift` from `content/index.html` is therefore rejected; the
+canonical forms are `lib/counter.nift` or `./lib/counter.nift`. This is
+positively and negatively certified by `contract/v46_import_ownership_smoke.sh`;
+worker module-graph deep-copy isolation is additionally certified upstream by
+`tests/v46_import_worker_ownership_smoke.sh`.
+
+### New v4.6 external contract modules
+
+`v46_bytes_smoke`, `v46_bytes_ffi_smoke`, `v46_recoverable_errors_smoke`,
+`v46_diagnostics_smoke`, `v46_filesystem_types_smoke`, `v46_exact_numbers_smoke`,
+`v46_streams_smoke`, `v46_runtime_utilities_smoke`, `v46_output_channels_smoke`,
+`v46_package_metadata_smoke`, `v46_package_graph_smoke`,
+`v46_import_ownership_smoke`, `v46_concurrency_smoke`, `v46_cli_smoke`,
+`v46_embed_consumer_smoke` (C ABI 1.3; skips without `NIFT_EMBED_PREFIX`).
+
+### Known exclusions and where they are certified instead
+
+- Per-operation embedding output sinks and C++ runtime internals (StrNumber
+  fingerprint, NaN/Inf, injected clocks, timer instance counts) are not reachable
+  from the executable; they are certified by Nift's implementation tests
+  (`tests/v46_output_embed.cpp`, `tests/runtime_value.cpp`,
+  `tests/v46_timer_unit.cpp`, `tests/c_abi_smoke.c`, `tests/v46_b4_cp8_embed.cpp`).
+- Maintained C ABI/binding matrices stay authoritative for binding surfaces; the
+  suite adds only a focused 1.3 consumer smoke and links the rest.
+- `/dev`-based backend failure cases are gated to Linux.
+
+### Finding for triage (not a reconciliation blocker)
+
+Deep expression nesting (a single `1 + 1 + ...` chain of roughly 4000+ terms)
+segfaults rather than reporting a controlled depth error. This is a robustness
+limit of recursive expression parsing, is not specific to any single v4.6 change,
+and is out of scope for this reconciliation; recorded here so it is triaged
+rather than silently ignored. Ordinary long flat source lines render a bounded
+diagnostic (certified by `v46_diagnostics_smoke`).
