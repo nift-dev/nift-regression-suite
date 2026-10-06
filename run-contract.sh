@@ -156,6 +156,7 @@ CONTRACT_TESTS=(
   v46_runtime_utilities_smoke.sh
   v46_streams_smoke.sh
   v47_deep_expression_smoke.sh
+  v47_prepared_method_parity_smoke.sh
 )
 
 # Fail closed when a contract file is added but not wired into the canonical runner.
