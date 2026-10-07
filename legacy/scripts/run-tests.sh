@@ -1937,11 +1937,33 @@ make_control_failure(){
   fi
 }
 
+make_control_success(){
+  local name="$1" template="$2" data="{}"
+  if [[ $# -ge 3 ]]; then data="$3"; fi
+  local d="$TMP_ROOT/control-ok-$name"
+  mkdir -p "$d"
+  (cd "$d" && "$NIFT_BIN" init >/dev/null 2>&1)
+  mkdir -p "$d/data"
+  printf '%s\n' "$data" >"$d/data/site.json"
+  printf '%s\n' "$template" >"$d/templates/template.html"
+  TESTS=$((TESTS+1))
+  if ! (cd "$d" && "$NIFT_BIN" build --all >log 2>&1); then
+    fail "$name unexpectedly failed"
+    cat "$d/log" >&2
+  elif ! grep -q 'RENDERED' "$d/public/index.html"; then
+    fail "$name did not render the conditional body"
+  fi
+}
+
 make_control_failure if-no-close "@if has no matching ')'" '@if(site.enabled{hello' '{"enabled":true}'
 make_control_failure if-no-block "@if(...) must be followed by a '{...}' block" '@if(site.enabled) hello' '{"enabled":true}'
 make_control_failure if-unclosed-block "@if block has no matching '}'" '@if(site.enabled){hello' '{"enabled":true}'
 make_control_failure if-missing-member "has no member 'missing'" $'@json(site, "data/site.json")\n@if(site.missing){x}' '{}'
-make_control_failure if-object-comparison '@if comparisons are only supported for scalar JSON values' $'@json(site, "data/site.json")\n@if(site.obj == site.obj){x}' '{"obj":{"x":1}}'
+# @if conditions accept object equality, matching ordinary/prepared equality
+# semantics (v4.8 comparison parity); the previous scalar-only restriction no
+# longer applies.
+make_control_success if-object-comparison $'@json(site, "data/site.json")\n@if(site.obj == site.obj){RENDERED}\n@content' '{"obj":{"x":1}}'
+
 make_control_failure if-order-mixed '@if ordering comparisons require two numbers or two strings of the same type' $'@json(site, "data/site.json")\n@if(site.n < "4"){x}' '{"n":3}'
 make_control_failure if-order-bool '@if ordering comparisons require two numbers or two strings of the same type' $'@json(site, "data/site.json")\n@if(site.a >= site.b){x}' '{"a":true,"b":false}'
 make_control_failure for-no-in "@for header must contain ':'" $'@json(site, "data/site.json")\n@for(item site.items){x}' '{"items":[]}'
