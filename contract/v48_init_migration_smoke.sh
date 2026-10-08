@@ -27,6 +27,25 @@ grep -q 'REFERENCE OUTPUT' fresh/investigation/BASELINE.md || { echo "BASELINE.m
 grep -q 'Source model' fresh/investigation/BASELINE.md || { echo "BASELINE.md lacks source model" >&2; exit 1; }
 grep -q 'compatibility proof must precede broad content translation' fresh/investigation/STATUS.md || { echo "STATUS.md lacks gate" >&2; exit 1; }
 
+# Islands inform architecture proof; profiling and revalidation precede final timing.
+python3 - fresh <<'PY_GUIDANCE'
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+method = (root / "MIGRATION.md").read_text()
+status = (root / "investigation/STATUS.md").read_text()
+assert method.index("Interactive islands and client frameworks") < method.index("### Phase 3")
+for item in ("React", "Vue", "Svelte", "Solid", "Web Components", "vanilla JavaScript",
+             "independently prepared browser-side", "benchmark-specific special cases"):
+    assert item in method, f"missing public migration guidance: {item}"
+for text, labels in ((method, ("### Phase 7", "### Phase 9 - Performance campaign",
+                              "### Phase 10 - Final parity revalidation", "### Phase 11 - Final benchmark campaign")),
+                     (status, ("| 7 Route/content", "| 9 Performance campaign",
+                               "| 10 Final parity revalidation", "| 11 Final benchmark campaign"))):
+    positions = [text.index(label) for label in labels]
+    assert positions == sorted(positions), "public migration checkpoint order changed"
+PY_GUIDANCE
+
 # Deterministic scaffold.
 mkdir -p fresh2
 ( cd fresh2 && "$NIFT_BIN" init --migration >/dev/null 2>&1 )
