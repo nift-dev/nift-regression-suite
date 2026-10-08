@@ -102,3 +102,49 @@ if command -v git >/dev/null 2>&1; then
 fi
 
 printf 'PASS v4.8 migration initialization\n'
+# Extend this existing init-workspace contract; do not inflate the module count.
+python3 - "$NIFT_BIN" <<'PY_TRANSFORM'
+from pathlib import Path
+import subprocess, sys, tempfile
+binary=sys.argv[1]
+with tempfile.TemporaryDirectory(prefix='nrs-transformation-') as tmp:
+    base=Path(tmp)
+    def init(root, mode, policy='error', success=True):
+        before={str(p.relative_to(root)):p.read_bytes() for p in root.rglob('*') if p.is_file()}
+        result=subprocess.run([binary,'init','--'+mode,f'--{mode}-existing={policy}'],cwd=root,capture_output=True)
+        assert (result.returncode==0)==success, result.stderr.decode(errors='replace')
+        if not success:
+            assert before=={str(p.relative_to(root)):p.read_bytes() for p in root.rglob('*') if p.is_file()}, 'failed init changed input'
+    for mode, records, labels in (
+        ('rewrite',('REFERENCE','BEHAVIOR-CONTRACT','DESIGN-CONTRACT'),('Validate design/behaviour parity','Performance campaign','Full parity revalidation','Final benchmarks')),
+        ('redesign',('REQUIREMENTS','DESIGN-BRIEF','ROUTE-MAP'),('Accessibility/browser validation','Performance campaign','Final contract revalidation','Final meaningful benchmark/comparison'))):
+        roots=[]
+        for index in range(2):
+            root=base/f'{mode}-{index}';root.mkdir();init(root,mode);roots.append(root)
+            for file in (mode.upper()+'.md','HANDOVER.md','AGENTS.md','README.md',*(f'investigation/{r}.md' for r in (*records,'STATUS','CONTENT-INVENTORY','EXTERNAL-INPUTS','KNOWN-DIVERGENCES'))):
+                assert (root/file).is_file(), file
+            method=(root/(mode.upper()+'.md')).read_text()
+            for item in ('EXPERIMENTAL','React','Vue','Svelte','Solid','Web Components','authored','rendered','hybrid'):
+                assert item in method,item
+            status=(root/'investigation/STATUS.md').read_text()
+            positions=[status.index(label) for label in labels];assert positions==sorted(positions)
+            agents=(root/'AGENTS.md').read_text()
+            assert agents.count(f'nift:{mode}:start')==agents.count(f'nift:{mode}:end')==1
+            init(root,mode,policy='replace',success=False)
+        for p in roots[0].rglob('*.md'):
+            assert p.read_bytes()==(roots[1]/p.relative_to(roots[0])).read_bytes(), 'nondeterministic guidance'
+        for policy in ('error','keep','append','replace'):
+            root=base/f'{mode}-{policy}';root.mkdir();file=root/(mode.upper()+'.md');file.write_text('user workbook\n')
+            init(root,mode,policy,success=policy!='error')
+            if policy=='keep':assert file.read_text()=='user workbook\n'
+            if policy=='append':assert file.read_text().startswith('user workbook\n') and file.read_text().count(f'nift:{mode}-template:start')==1
+            if policy=='replace':assert file.read_bytes()==(roots[0]/file.name).read_bytes()
+            bad=base/f'{mode}-{policy}-bad';bad.mkdir();(bad/'AGENTS.md').write_text(f'<!-- nift:{mode}:start -->\n');init(bad,mode,policy,success=False)
+            for other in ('migration','rewrite','redesign'):
+                if other==mode:continue
+                foreign=base/f'{mode}-{policy}-{other}';foreign.mkdir();(foreign/(other.upper()+'.md')).write_text('other intent\n');init(foreign,mode,policy,success=False)
+        root=base/f'{mode}-conflict';root.mkdir()
+        result=subprocess.run([binary,'init','--'+mode,'--migration'],cwd=root,capture_output=True)
+        assert result.returncode!=0 and not list(root.iterdir()), 'conflicting intents accepted'
+print('PASS: experimental rewrite/redesign contracts within the existing init module')
+PY_TRANSFORM
