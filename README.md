@@ -115,3 +115,5 @@ advanced expression composition. `contract/v41_template_variables_smoke.sh` cove
 operators; and `contract/v41_inject_dependency.sh` proves injected expression
 sources participate in incremental rebuilding. Legacy `@json` remains covered
 separately while the v4.1 composable declaration/validation surface is adopted.
+
+The v4.10 development contract independently checks custom builds, tracked prerequisites, same-pass generated file invalidation, additive transformation initialization, and cycle rejection.

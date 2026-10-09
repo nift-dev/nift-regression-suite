@@ -64,6 +64,7 @@ run_module "historical + ruthless regression contract" \
 # Newer contract modules are implementation-independent: each creates temporary
 # Nift projects and interacts only through the executable + documented artifacts.
 CONTRACT_TESTS=(
+  v410_build_pipeline_smoke.sh
   json_schema_integration_smoke.sh
   parser_content_smoke.sh
   diagnostics_smoke.sh

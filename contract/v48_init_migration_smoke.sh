@@ -130,7 +130,9 @@ with tempfile.TemporaryDirectory(prefix='nrs-transformation-') as tmp:
             positions=[status.index(label) for label in labels];assert positions==sorted(positions)
             agents=(root/'AGENTS.md').read_text()
             assert agents.count(f'nift:{mode}:start')==agents.count(f'nift:{mode}:end')==1
-            init(root,mode,policy='replace',success=False)
+            before={str(p.relative_to(root)):p.read_bytes() for p in root.rglob('*') if p.is_file()}
+            init(root,mode,policy='replace')
+            assert before=={str(p.relative_to(root)):p.read_bytes() for p in root.rglob('*') if p.is_file()}, 'existing-project rerun changed input'
         for p in roots[0].rglob('*.md'):
             assert p.read_bytes()==(roots[1]/p.relative_to(roots[0])).read_bytes(), 'nondeterministic guidance'
         for policy in ('error','keep','append','replace'):
