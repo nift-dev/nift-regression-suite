@@ -6,7 +6,15 @@ NIFT_BIN="${NIFT_BIN:-nift}"
 FAILS=0
 TESTS=0
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/nift-v04-tests.XXXXXX")"
-trap 'rm -rf "$TMP_ROOT"' EXIT
+RUN_TMP_ROOT="$TMP_ROOT"
+auto_pid=""
+# A leaked `build --auto` watcher outlives the suite, holds an executable inside
+# the source checkout and races later `make clean`/repo copies. Track its real
+# PID and always terminate it on exit, including when the suite is interrupted.
+# The sourced adversarial extension uses its own ADV_TMP_ROOT so it can no longer
+# clobber TMP_ROOT and make this trap delete the wrong directory.
+cleanup(){ if [[ -n "$auto_pid" ]]; then kill "$auto_pid" 2>/dev/null || true; wait "$auto_pid" 2>/dev/null || true; fi; rm -rf "$RUN_TMP_ROOT"; if [[ -n "${ADV_TMP_ROOT:-}" ]]; then rm -rf "$ADV_TMP_ROOT"; fi; }
+trap cleanup EXIT
 
 fail(){ printf 'FAIL [test %03d]: %s\n' "$TESTS" "$*" >&2; FAILS=$((FAILS+1)); }
 pass(){ :; }
@@ -982,7 +990,9 @@ mkdir -p "$AUTO"
 (cd "$AUTO" && "$NIFT_BIN" init >/dev/null 2>&1)
 sed -i 's/"incremental-mode":[[:space:]]*"modified"/"incremental-mode": "hash"/' "$AUTO/.nift/config.json"
 (cd "$AUTO" && "$NIFT_BIN" build --all >/dev/null 2>&1)
-(cd "$AUTO" && "$NIFT_BIN" build --auto >"$TMP_ROOT/build-auto.log" 2>&1) &
+# `exec` makes the subshell become the watcher, so `$auto_pid` is the real
+# `nift` process; killing only the subshell would otherwise orphan the watcher.
+(cd "$AUTO" && exec "$NIFT_BIN" build --auto >"$TMP_ROOT/build-auto.log" 2>&1) &
 auto_pid=$!
 sleep 0.4
 printf 'AUTO-CHANGE-1\n' >"$AUTO/content/index.html"
@@ -994,6 +1004,8 @@ sleep 0.7
 t2=$(stat -c %Y "$AUTO/public/index.html")
 kill "$auto_pid" >/dev/null 2>&1 || true
 wait "$auto_pid" >/dev/null 2>&1 || true
+if kill -0 "$auto_pid" >/dev/null 2>&1; then fail 'build --auto watcher survived teardown (leaked process)'; fi
+auto_pid=""
 [[ "$t2" -eq "$t1" ]] || fail 'hash-mode build --auto keeps rebuilding after a second edit (hash cache not refreshed candidate)'
 
 
@@ -2011,6 +2023,10 @@ fi
 # Final summary only. No success chatter before this.
 # Ruthless source-audit/adversarial extension.
 source "$(dirname "$0")/ruthless-adversarial.sh"
+
+# The sourced extension must not reassign TMP_ROOT: doing so previously made the
+# EXIT trap delete the extension's directory and leak the runner's own temp root.
+if [[ "$TMP_ROOT" != "$RUN_TMP_ROOT" ]]; then fail 'sourced extension clobbered TMP_ROOT'; fi
 
 if [[ $FAILS -eq 0 ]]; then
   printf 'PASS: %d assertions/tests\n' "$TESTS"
