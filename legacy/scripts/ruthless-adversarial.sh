@@ -171,8 +171,26 @@ touch -r "$P/stamp" "$P/content/index.html"; (cd "$P" && "$NIFT_BIN" build >/dev
 import sys
 raise SystemExit(0 if open(sys.argv[1],'rb').read().hex()=='5616c0842221a4ef' else 1)
 PY
-# Corrupt stored hash with valid numeric prefix + garbage; it must be treated as invalid/changed.
-P="$ADV_TMP_ROOT/hash-state-junk"; mkproj "$P" hash; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1); H="$P/.nift/content/index.html.hash"; V=$(tr -d '\r\n' <"$H"); printf '%sjunk\n' "$V" >"$H"; (cd "$P" && "$NIFT_BIN" build >log 2>&1); check contains "$P/log" 'dependency changed: content/index.html' 'stored hash with trailing garbage was accepted as valid'
+# Corrupt the authoritative historical hash, preserving older-binary coverage.
+P="$ADV_TMP_ROOT/hash-state-junk"; mkproj "$P" hash; (cd "$P" && "$NIFT_BIN" build --all >/dev/null 2>&1)
+I="$P/.nift/public/index.info.json"
+if python3 -S - "$I" <<'PY_CHECK'
+import json,sys
+raise SystemExit(0 if 'dependency-hashes' in json.load(open(sys.argv[1])) else 1)
+PY_CHECK
+then
+  chmod 644 "$I"
+  python3 -S - "$I" <<'PY_CORRUPT'
+import json,sys
+p=sys.argv[1]; d=json.load(open(p)); k='content/index.html'
+d['dependency-hashes'][k] += 'junk'
+json.dump(d,open(p,'w'))
+PY_CORRUPT
+  chmod 444 "$I"
+else
+  H="$P/.nift/content/index.html.hash"; V=$(tr -d '\r\n' <"$H"); printf '%sjunk\n' "$V" >"$H"
+fi
+(cd "$P" && "$NIFT_BIN" status >log 2>&1); check not_contains "$P/log" 'all files are already up to date' 'historical dependency hash with trailing garbage was accepted as valid'
 
 # -----------------------------------------------------------------------------
 # JSON parser / template data edge cases
