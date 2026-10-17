@@ -168,17 +168,28 @@ printf '\n' >"$P/content/index.html"
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null)
 grep -Fq 'LOOP=abAFTER' "$P/public/index.html"
 
-# Traversal, absolute-escape, symlink escape and unreadable data stay controlled.
+# D-002 (Nift Runtime 2.0): "..", absolute and symlinked paths outside the project
+# load with normal OS semantics. (Previously: each refused with "json: path must
+# stay inside the Nift project".) A missing external file still fails with the
+# normal "does not exist" diagnostic.
+expect_build_output() {
+  local d="$1" expected="$2" name="$3"
+  (cd "$d" && rm -f .nift/.unfinished)
+  (cd "$d" && "$NIFT_BIN" build --all >log 2>&1) || { echo "$name failed" >&2; cat "$d/log" >&2; exit 1; }
+  grep -Fq "$expected" "$d/public/index.html" || { echo "$name missing output: $expected" >&2; exit 1; }
+}
 P="$TMP/path-safety"; mkproj "$P"
-printf '{}\n' >"$TMP/outside.json"
-printf '%s\n' '@json(data, "../outside.json")' >"$P/templates/template.html"
+printf '{"where":"outside"}\n' >"$TMP/outside.json"
+printf '%s\n' '@json(data, "../outside.json")' 'REL=$[data.where]' '@content' >"$P/templates/template.html"
 printf '\n' >"$P/content/index.html"
-expect_build_failure "$P" 'json: path must stay inside the Nift project' "traversal must fail"
-printf '%s\n' '@json(data, "/etc/passwd")' >"$P/templates/template.html"
-expect_build_failure "$P" 'json: path must stay inside the Nift project' "absolute escape must fail"
+expect_build_output "$P" 'REL=outside' "traversal must load"
+printf '%s\n' "@json(data, \"$TMP/outside.json\")" 'ABS=$[data.where]' '@content' >"$P/templates/template.html"
+expect_build_output "$P" 'ABS=outside' "absolute path must load"
 ln -s "$TMP/outside.json" "$P/data/link.json"
-printf '%s\n' '@json(data, "data/link.json")' >"$P/templates/template.html"
-expect_build_failure "$P" 'json: path must stay inside the Nift project' "symlink escape must fail"
+printf '%s\n' '@json(data, "data/link.json")' 'LINK=$[data.where]' '@content' >"$P/templates/template.html"
+expect_build_output "$P" 'LINK=outside' "symlink to outside must load"
+printf '%s\n' "@json(data, \"$TMP/missing-outside.json\")" '@content' >"$P/templates/template.html"
+expect_build_failure "$P" "json: file does not exist: $TMP/missing-outside.json" "missing absolute file must fail"
 
 # Data and schema edits trigger affected rebuilds; unrelated pages stay current.
 P="$TMP/incremental"; mkproj "$P"

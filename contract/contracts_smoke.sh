@@ -200,14 +200,39 @@ D="$TMP/config-bad-path-type"
 make_project "$D" '{"routes":42}'
 expect_open_failure "$D" "contract 'routes' must map to a non-empty JSON path string"
 
+# D-002 (Nift Runtime 2.0): contract sources outside the project (via ".." or a
+# symlink) open and build with normal OS semantics and are tracked; external
+# edits invalidate dependent output. (Previously: both refused with "contract
+# 'routes' path must stay inside the Nift project".) The fixtures gained a
+# template that references the namespace.
+printf '{"where":"outside"}\n' > "$TMP/outside.json"
 D="$TMP/config-traversal"
 make_project "$D" '{"routes":"../outside.json"}'
-expect_open_failure "$D" "contract 'routes' path must stay inside the Nift project"
+printf 'WHERE=$[routes.where]\n@content\n' > "$D/templates/template.html"
+(cd "$D" && "$NIFT_BIN" build --all >log 2>&1) || { cat "$D/log" >&2; echo "external contract via .. failed to build" >&2; exit 1; }
+grep -Fx 'WHERE=outside' "$D/public/index.html" >/dev/null
 
 D="$TMP/config-symlink"
 make_project "$D" '{"routes":"data/link.json"}'
-printf '{}\n' > "$TMP/outside.json"
 ln -s "$TMP/outside.json" "$D/data/link.json"
-expect_open_failure "$D" "contract 'routes' path must stay inside the Nift project"
+printf 'WHERE=$[routes.where]\n@content\n' > "$D/templates/template.html"
+(cd "$D" && "$NIFT_BIN" build --all >log 2>&1) || { cat "$D/log" >&2; echo "external contract via symlink failed to build" >&2; exit 1; }
+grep -Fx 'WHERE=outside' "$D/public/index.html" >/dev/null
+
+printf '{"where":"edited"}\n' > "$TMP/outside.json"
+python3 - "$TMP/outside.json" <<'PY2'
+import os, sys, time
+p=sys.argv[1]; t=time.time()+2; os.utime(p,(t,t))
+PY2
+for d in "$TMP/config-traversal" "$TMP/config-symlink"; do
+    (cd "$d" && "$NIFT_BIN" build >/dev/null)
+    grep -Fx 'WHERE=edited' "$d/public/index.html" >/dev/null
+done
+
+# A missing external contract source still fails with the normal diagnostic.
+D="$TMP/config-missing-external"
+make_project "$D" '{"routes":"../missing-outside.json"}'
+printf 'WHERE=$[routes.where]\n@content\n' > "$D/templates/template.html"
+expect_build_failure "$D" "contract 'routes': file does not exist: ../missing-outside.json"
 
 echo "Project contracts smoke test passed"

@@ -45,11 +45,40 @@ fail_build(){
   }
 }
 
-fail_build json-symlink 'path must stay inside the Nift project' '@json(x, "data/link.json")'
-printf '{}\n' >"$P/data/local.json"
-fail_build schema-symlink 'schema path must stay inside the Nift project' '@json(x, "schemas/link.json", "data/local.json")'
+ok_build(){
+  local name="$1" template="$2"
+  printf '%s\n@content\n' "$template" >"$P/templates/template.html"
+  rm -f "$P/.nift/.unfinished"
+  (cd "$P" && "$NIFT_BIN" build --all >"$name.log" 2>&1) || {
+    echo "$name unexpectedly failed" >&2
+    cat "$P/$name.log" >&2
+    exit 1
+  }
+}
 
-fail_build dep-symlink 'path must stay inside the Nift project' '@dep("data/dep-link.txt")'
+# D-002 (Nift Runtime 2.0): symlinks from inside the project to files outside it
+# follow normal OS semantics for @json data, schemas and @dep. (Previously: each
+# refused with "path must stay inside the Nift project".) The @path symlink
+# containment check below is retained.
+ok_build json-symlink '@json(x, "data/link.json")
+JSON=$[x.secret]'
+grep -Fq 'JSON=outside' "$P/public/index.html"
+printf '{"secret":"local"}\n' >"$P/data/local.json"
+ok_build schema-symlink '@json(x, "schemas/link.json", "data/local.json")
+SCHEMA=$[x.secret]'
+grep -Fq 'SCHEMA=local' "$P/public/index.html"
+
+ok_build dep-symlink '@dep("data/dep-link.txt")
+DEP-OK'
+grep -Fq 'DEP-OK' "$P/public/index.html"
+# Editing the symlink target outside the project invalidates the page.
+(cd "$P" && "$NIFT_BIN" status >status.log 2>&1)
+grep -Fq 'up to date' "$P/status.log"
+sleep 1
+printf 'outside edited\n' >"$OUT/file.txt"
+(cd "$P" && "$NIFT_BIN" status >status.log 2>&1) || true
+grep -Fq 'dependency changed: data/dep-link.txt' "$P/status.log"
+
 fail_build pathto-symlink 'path must stay inside the Nift project' '@path("public/link.txt")'
 
 echo "Path safety smoke test passed"

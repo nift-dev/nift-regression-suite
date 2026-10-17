@@ -171,15 +171,27 @@ printf 'Included changed.\n' >"$P/prose/part.adoc"
 grep -Fq 'prose/part.adoc' "$P/log"
 grep -Fq 'Included changed.' "$P/public/index.html"
 
-# Unknown formats, missing sources, traversal and include cycles fail cleanly.
+# Unknown formats, missing sources and include cycles fail cleanly.
 P="$TMP/errors"; mkproj "$P"
 printf '@markup("bogus") { x }\n' >"$P/templates/template.html"
 printf '\n' >"$P/content/index.html"
 expect_build_failure "$P" "unknown format 'bogus'" "unknown format must fail"
 printf '@markup("md", "prose/nope.md")\n' >"$P/templates/template.html"
 expect_build_failure "$P" "markup: file does not exist" "missing source must fail"
-printf '@markup("md", "../outside.md")\n' >"$P/templates/template.html"
-expect_build_failure "$P" "path must stay inside the Nift project" "traversal must fail"
+# D-002 (Nift Runtime 2.0): a markup source outside the project renders with
+# normal OS semantics and edits to it invalidate the page; a missing external
+# source still fails. (Previously: "path must stay inside the Nift project".)
+printf '# Outside\n' >"$TMP/outside.md"
+printf '@markup("md", "../outside.md")\n@content\n' >"$P/templates/template.html"
+(cd "$P" && rm -f .nift/.unfinished)
+(cd "$P" && "$NIFT_BIN" build --all >log 2>&1) || { cat "$P/log" >&2; echo "external markup source failed to build" >&2; exit 1; }
+grep -Fq '<h1>Outside</h1>' "$P/public/index.html"
+sleep 1
+printf '# Outside changed\n' >"$TMP/outside.md"
+(cd "$P" && "$NIFT_BIN" build >log 2>&1)
+grep -Fq '<h1>Outside changed</h1>' "$P/public/index.html"
+printf '@markup("md", "../missing-outside.md")\n@content\n' >"$P/templates/template.html"
+expect_build_failure "$P" "markup: file does not exist" "missing external source must fail"
 
 P="$TMP/include-cycle"; mkproj "$P"
 printf '@markup("adoc", "prose/a.adoc")\n' >"$P/templates/template.html"

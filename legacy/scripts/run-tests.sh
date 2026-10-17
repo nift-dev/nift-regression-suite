@@ -1615,13 +1615,16 @@ fi
 JSONTRAV="$TMP_ROOT/json-traversal/project"
 mkdir -p "$JSONTRAV"
 (cd "$JSONTRAV" && "$NIFT_BIN" init >/dev/null 2>&1)
-printf '{}\n' >"$TMP_ROOT/json-traversal/outside.json"
-printf '%s\n' '@json(data, "../outside.json")' >"$JSONTRAV/templates/template.html"
+# D-002 (Nift Runtime 2.0): @json data outside the project loads with normal OS
+# semantics. (Previously: refused with "json: path must stay inside the Nift
+# project".)
+printf '{"where":"outside"}\n' >"$TMP_ROOT/json-traversal/outside.json"
+printf '%s\n' '@json(data, "../outside.json")' 'WHERE=$[data.where]' '@content' >"$JSONTRAV/templates/template.html"
 TESTS=$((TESTS+1))
 if (cd "$JSONTRAV" && "$NIFT_BIN" build --all >log 2>&1); then
-  fail '@json traversal unexpectedly succeeded'
+  grep -Fq 'WHERE=outside' "$JSONTRAV/public/index.html" || fail '@json outside the project did not render the external value'
 else
-  grep -Fq 'json: path must stay inside the Nift project' "$JSONTRAV/log" || fail '@json traversal error is not informative'
+  fail '@json outside the project failed to build'
 fi
 
 # JSON files are ordinary page dependencies for incremental builds.

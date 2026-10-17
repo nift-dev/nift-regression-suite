@@ -124,15 +124,26 @@ if (cd "$D" && "$NIFT_BIN" build --all >log 2>&1); then
 fi
 grep -F 'json: file does not exist: data/nope.json' "$D/log" >/dev/null
 
-D="$TMP/traversal"
+# D-002 (Nift Runtime 2.0): @json data outside the project loads with normal OS
+# semantics and is tracked; a missing external file still fails with the normal
+# "does not exist" diagnostic. (Previously: "json: path must stay inside the Nift
+# project".) The project is nested so "../../" resolves inside this test's temp dir.
+D="$TMP/traversal/project"
 make_project "$D"
-printf '{}\n' > "$TMP/outside.json"
-printf '%s\n' '@json(data, "../../outside.json")' > "$D/templates/template.html"
+printf '{"where":"outside"}\n' > "$TMP/outside.json"
+printf '%s\n' '@json(data, "../../outside.json")' 'WHERE=$[data.where]' '@content' > "$D/templates/template.html"
+(cd "$D" && "$NIFT_BIN" build --all >log 2>&1) || { cat "$D/log" >&2; echo "external @json failed to build" >&2; exit 1; }
+grep -Fx 'WHERE=outside' "$D/public/index.html" >/dev/null
+sleep 1
+printf '{"where":"edited"}\n' > "$TMP/outside.json"
+(cd "$D" && "$NIFT_BIN" build >/dev/null)
+grep -Fx 'WHERE=edited' "$D/public/index.html" >/dev/null
+printf '%s\n' '@json(data, "../../missing-outside.json")' '@content' > "$D/templates/template.html"
 if (cd "$D" && "$NIFT_BIN" build --all >log 2>&1); then
-    echo "traversal unexpectedly succeeded" >&2
+    echo "missing external @json unexpectedly succeeded" >&2
     exit 1
 fi
-grep -F 'json: path must stay inside the Nift project' "$D/log" >/dev/null
+grep -F 'json: file does not exist: ../../missing-outside.json' "$D/log" >/dev/null
 
 echo "JSON binding smoke test passed"
 
@@ -199,13 +210,18 @@ printf '%s\n' '@json(data, "data/missing.schema.json", "data/test.json")' >"$D/t
 if (cd "$D" && "$NIFT_BIN" build --all >log 2>&1); then echo "schema-missing unexpectedly succeeded" >&2; exit 1; fi
 grep -F 'json: schema file does not exist: data/missing.schema.json' "$D/log" >/dev/null
 
-D="$TMP/schema-traversal"
+# D-002 (Nift Runtime 2.0): an external schema loads and validates normally.
+# (Previously: "json: schema path must stay inside the Nift project".)
+D="$TMP/schema-traversal/project"
 make_project "$D"
+printf '%s\n' '{"name":"ok"}' >"$D/data/test.json"
+printf '%s\n' '{"type":"object","required":["name"]}' >"$TMP/outside.schema.json"
+printf '%s\n' '@json(data, "../../outside.schema.json", "data/test.json")' 'NAME=$[data.name]' '@content' >"$D/templates/template.html"
+(cd "$D" && "$NIFT_BIN" build --all >log 2>&1) || { cat "$D/log" >&2; echo "external schema failed to build" >&2; exit 1; }
+grep -Fx 'NAME=ok' "$D/public/index.html" >/dev/null
 printf '%s\n' '{}' >"$D/data/test.json"
-printf '%s\n' '{}' >"$TMP/outside.schema.json"
-printf '%s\n' '@json(data, "../../outside.schema.json", "data/test.json")' >"$D/templates/template.html"
-if (cd "$D" && "$NIFT_BIN" build --all >log 2>&1); then echo "schema-traversal unexpectedly succeeded" >&2; exit 1; fi
-grep -F 'json: schema path must stay inside the Nift project' "$D/log" >/dev/null
+if (cd "$D" && "$NIFT_BIN" build --all >log 2>&1); then echo "external schema did not validate" >&2; exit 1; fi
+grep -F "required property 'name' is missing" "$D/log" >/dev/null
 
 # Schema position disambiguation: a bare identifier is a schema BINDING NAME and
 # must already exist; a quoted string is a schema path. A missing bare schema

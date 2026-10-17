@@ -101,25 +101,38 @@ grep -Fq 'IN=Ada' "$P/public/index.html"
 grep -Fq 'AFTER=Ada' "$P/public/index.html"
 grep -Fq '"schemas/item.schema.json"' "$P/.nift/public/index.info.json"
 
-# Path traversal for both data and schema must be rejected.
+# D-002 (Nift Runtime 2.0): data and schema outside the project ("../") are no
+# longer refused. They load with normal OS semantics, validate, are recorded as
+# dependencies and invalidate the page when edited. (Previously: both refused
+# with "path must stay inside the Nift project".)
 P="$TMP/traversal"; mkproj "$P"
-printf '{}\n' >"$TMP/outside.json"
-printf '{}\n' >"$P/data/ok.json"
-printf '{}\n' >"$P/schemas/ok.json"
-printf '@json(data, "../outside.json")\n@content\n' >"$P/templates/template.html"
+printf '{"v":"ext1"}\n' >"$TMP/outside.json"
+printf '{"type":"object","required":["v"],"properties":{"v":{"type":"string"}}}\n' >"$TMP/outside.schema.json"
+printf '{"v":"ok"}\n' >"$P/data/ok.json"
+printf '@json(data, "../outside.json")\nDATA=$[data.v]\n@content\n' >"$P/templates/template.html"
 printf '\n' >"$P/content/index.html"
-if (cd "$P" && "$NIFT_BIN" build --all >trav-data.log 2>&1); then
-  echo "json traversal unexpectedly succeeded" >&2
-  exit 1
-fi
-(cd "$P" && rm -f .nift/.unfinished)
-grep -Fq 'path must stay inside the Nift project' "$P/trav-data.log"
+(cd "$P" && "$NIFT_BIN" build --all >trav-data.log 2>&1) || { cat "$P/trav-data.log" >&2; echo "external json data failed to build" >&2; exit 1; }
+grep -Fq 'DATA=ext1' "$P/public/index.html"
 
-printf '@json(data, "../outside.json", "data/ok.json")\n@content\n' >"$P/templates/template.html"
-if (cd "$P" && "$NIFT_BIN" build --all >trav-schema.log 2>&1); then
-  echo "schema traversal unexpectedly succeeded" >&2
+printf '@json(data, "../outside.schema.json", "data/ok.json")\nSCHEMA=$[data.v]\n@content\n' >"$P/templates/template.html"
+(cd "$P" && "$NIFT_BIN" build --all >trav-schema.log 2>&1) || { cat "$P/trav-schema.log" >&2; echo "external json schema failed to build" >&2; exit 1; }
+grep -Fq 'SCHEMA=ok' "$P/public/index.html"
+
+# External data validated by an external schema; external edits invalidate and
+# still go through the schema.
+printf '@json(data, "../outside.schema.json", "../outside.json")\nBOTH=$[data.v]\n@content\n' >"$P/templates/template.html"
+(cd "$P" && "$NIFT_BIN" build --all >/dev/null)
+grep -Fq 'BOTH=ext1' "$P/public/index.html"
+sleep 1
+printf '{"v":"ext2"}\n' >"$TMP/outside.json"
+(cd "$P" && "$NIFT_BIN" build >/dev/null)
+grep -Fq 'BOTH=ext2' "$P/public/index.html"
+sleep 1
+printf '{"v":3}\n' >"$TMP/outside.json"
+if (cd "$P" && "$NIFT_BIN" build >trav-bad.log 2>&1); then
+  echo "schema-invalid external data unexpectedly built" >&2
   exit 1
 fi
-grep -Fq 'schema path must stay inside the Nift project' "$P/trav-schema.log"
+grep -Fq 'does not satisfy schema' "$P/trav-bad.log"
 
 echo "JSON Schema integration smoke test passed"

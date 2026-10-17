@@ -194,16 +194,41 @@ if (cd "$P" && "$NIFT_BIN" build --all >build.log 2>&1); then
   fail 'malformed interpolation unexpectedly succeeds'
 else pass; fi
 
-# Interpolated traversal remains subject to the outer operation's containment
-# rules; value provenance never grants a privileged path.
+# Interpolated traversal remains subject to the outer operation's rules; value
+# provenance never grants a privileged path.
+# D-002 (Nift Runtime 2.0): @dep is no longer confined, so an interpolated
+# external @dep path builds and is tracked exactly like a literal one
+# (previously: "dep: path must stay inside the Nift project"); @path keeps its
+# containment rule, so an interpolated external @path is still rejected. Kept as
+# one check so the contract's check count is unchanged.
 P="$TMP/traversal"; make_project "$P"
 printf '{"path":"../outside.txt"}\n' >"$P/data/selector.json"
 printf outside >"$TMP/outside.txt"
 cat >"$P/templates/template.html" <<'EOF'
 @json(selector, "data/selector.json")
 @dep($[selector.path])
+<p>INTERPOLATED-DEP</p>
+@content
 EOF
-expect_build_failure "$P" 'dep: path must stay inside the Nift project' 'interpolated traversal is rejected'
+traversal_ok=1
+if (cd "$P" && "$NIFT_BIN" build --all >build.log 2>&1) && grep -Fq 'INTERPOLATED-DEP' "$P/public/index.html"; then
+  sleep 1
+  printf 'outside edited' >"$TMP/outside.txt"
+  (cd "$P" && "$NIFT_BIN" status >status.log 2>&1) || true
+  grep -Fq 'dependency changed: ../outside.txt' "$P/status.log" || traversal_ok=0
+else
+  traversal_ok=0; sed -n '1,80p' "$P/build.log" >&2
+fi
+cat >"$P/templates/template.html" <<'EOF'
+@json(selector, "data/selector.json")
+<a href="@path($[selector.path])">x</a>
+@content
+EOF
+if (cd "$P" && "$NIFT_BIN" build --all >build.log 2>&1) \
+   || ! grep -Fq '@path path must stay inside the Nift project' "$P/build.log"; then
+  traversal_ok=0; sed -n '1,80p' "$P/build.log" >&2
+fi
+if (( traversal_ok )); then pass; else fail 'interpolated traversal follows the outer operation (external @dep tracked, @path contained)'; fi
 
 # Dynamic dependency sets are replaced after a successful A -> B transition in
 # all incremental modes. The selector and current target matter; stale A does not.

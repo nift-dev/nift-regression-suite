@@ -57,14 +57,14 @@ name-first `@json` forms: `@json(name, path)`, `@json(name, schema-path, path)`,
 inline templating, named-schema reuse, immutable binding and failed-validation
 non-binding, collisions, the schema-name-versus-schema-path disambiguation
 (quoted arguments are paths; bare identifiers are existing binding names and
-never fall back to files), lazy branches, loop scope, path safety and
-incremental data/schema invalidation.
+never fall back to files), lazy branches, loop scope, external (`..`, absolute,
+symlinked) paths and incremental data/schema invalidation.
 
 `contract/markup_directives_smoke.sh` is the black-box contract for `@markup`
 inline and file-backed conversion of Markdown, AsciiDoc and reStructuredText,
 their long aliases, template-before-conversion and the no-second-pass guarantee,
 JSON and loop bindings inside markup, include dependency recording and
-invalidation, unknown-format/missing-source/traversal/cycle failures, and brace
+invalidation, external sources, unknown-format/missing-source/cycle failures, and brace
 handling in Markdown code spans and fenced blocks.
 
 `contract/path_alias_smoke.sh` proves that canonical `@path(...)` and the
@@ -119,3 +119,47 @@ sources participate in incremental rebuilding. Legacy `@json` remains covered
 separately while the v4.1 composable declaration/validation surface is adopted.
 
 The v4.10 development contract independently checks custom builds, tracked prerequisites, same-pass generated file invalidation, additive transformation initialization, and cycle rejection.
+
+## Nift Runtime 2.0 contract changes
+
+Owner-approved contract breaks for Nift Runtime 2.0. Each changed assertion
+keeps a test of the same scenario, now asserting the new behaviour, and is
+marked in the module with a `# D-002 (Nift Runtime 2.0): ...` comment.
+
+### D-002 — Filesystem freedom
+
+General filesystem operations are no longer confined to the project root.
+Absolute paths, `..` and symlinks to files outside the project work with normal
+OS semantics for `@json` data and schemas, `@markup`, `@dep`, `@input`,
+pagination templates, config contracts/schemas/taxonomies, script filesystem
+operations and page-info dependency/requirement paths. External files are
+tracked as dependencies: editing one triggers a rebuild and an unchanged one
+does not. Missing external files fail with the normal "does not exist"
+diagnostics.
+
+Retained: `@path`/`@pathto` generated-URL containment ("path must stay inside
+the Nift project"); a requirement under the output tree that is retargeted
+outside both the project and the output root makes `status` report "required
+output path now resolves outside the project: ..." and the rebuild fails with
+the `@path` error; `--fs-root` stays an explicit opt-in restriction; Nift-owned
+state protections (`rm`/untrack never delete external files, tracked names
+cannot escape the project).
+
+Changed modules:
+
+| Module | Old assertion | New assertion |
+| --- | --- | --- |
+| `legacy/scripts/run-tests.sh` (`@json` traversal test) | `@json(data, "../outside.json")` refused | builds and renders the external value |
+| `contract/json_schema_integration_smoke.sh` | `../outside.json` data and schema refused | both build; external data validates through an external schema; external edits invalidate |
+| `contract/json_binding_smoke.sh` | `../../outside.json` data and schema refused | both load and validate; external edit invalidates; missing external file "does not exist" |
+| `contract/json_six_forms_smoke.sh` | `..`, absolute and symlinked `@json` refused | all three render the external value; missing absolute file "does not exist" |
+| `contract/markup_directives_smoke.sh` | `@markup("md", "../outside.md")` refused | renders; external edit invalidates; missing external source fails |
+| `contract/path_security_smoke.sh` | `@dep("../outside.txt")` refused | builds, up to date, then "dependency changed" after an external edit; `@path` traversal check unchanged |
+| `contract/path_safety_smoke.sh` | `@json`, schema and `@dep` via symlink to outside refused | build and render; symlink-target edit reports "dependency changed"; `@path` symlink check unchanged |
+| `contract/parameter_interpolation_smoke.sh` | interpolated `@dep` traversal refused | interpolated external `@dep` builds and is tracked; interpolated external `@path` still refused (check count unchanged) |
+| `contract/contracts_smoke.sh` | contract via `..`/symlink refused at open | opens, builds and renders (fixtures gained a template); external edit invalidates; missing external contract "does not exist" |
+| `contract/requirements_smoke.sh` | external req/dep in page-info "invalid" | evaluated: up to date, then "required path missing" / "dependency changed" |
+| `contract/metadata_safety_smoke.sh` | external page-info paths "invalid"; retargeted `@path` symlink "invalid requirement" | external paths evaluated normally; retarget reports "required output path now resolves outside the project" and the rebuild fails with the `@path` error |
+
+Pre-Runtime-2.0 executables fail these modules by design: they encode the new
+contract.
