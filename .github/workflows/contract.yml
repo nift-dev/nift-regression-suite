@@ -2,7 +2,7 @@ name: Contract suite against Nift
 
 on:
   push:
-    branches: [main]
+    branches: [main, runtime-2]
   workflow_dispatch:
     inputs:
       nift-sha:
@@ -24,7 +24,9 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: nift-dev/nift
-          ref: "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.nift-sha || 'main' }}"
+          # Runtime 2.0 (D-008): the suite's runtime-2 branch tests the core's
+          # runtime-2 branch; main tests main.
+          ref: "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.nift-sha || (github.ref_name == 'runtime-2' && 'runtime-2' || 'main') }}"
           path: nift
       # The v4.4 package contracts dogfood the real nift-packages repositories,
       # which the contracts resolve as a sibling `nift-packages/` directory.
