@@ -18,7 +18,9 @@ site="$tmp/site"; mkdir -p "$site"
 printf '$[platform()]\n' > "$site/content/index.html"
 (cd "$site" && "$NIFT" --platform=android build >/dev/null)
 grep -q 'android' "$site/public/index.html"
-printf '$[platform()]\n' > "$site/content/index.html"
+# Runtime 2.0: switching --platform invalidates pages that call platform().
+# (The previous same-bytes rewrite of the content file relied on mtime
+# ordering and was timing-dependent on v4.12.0 too.)
 (cd "$site" && "$NIFT" build --platform=ios >/dev/null)
 grep -q 'ios' "$site/public/index.html"
 if $NIFT --android "$tmp/t.f" >/dev/null 2>&1; then echo '--android unexpectedly accepted' >&2; exit 1; fi
