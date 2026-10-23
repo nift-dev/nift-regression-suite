@@ -46,7 +46,7 @@ grep -Fq 'required path missing: ../../outside-required.txt' "$P/status.log"
 if grep -Fq 'invalid' "$P/status.log"; then echo "external page-info path reported invalid" >&2; exit 1; fi
 
 # A req symlink that was safe at build time but is later retargeted outside the
-# project must stop satisfying the project-local @path invariant.
+# project is permitted by default; explicit root still rejects it.
 P="$TMP/retarget"; mkproj "$P"
 printf 'inside\n' >"$P/public/assets/inside.txt"
 printf 'outside\n' >"$TMP/outside-target.txt"
@@ -55,21 +55,24 @@ printf '<a href="@path('"'"'public/assets/link.txt'"'"')">x</a>\n' >"$P/content/
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null)
 rm "$P/public/assets/link.txt"
 ln -s "$TMP/outside-target.txt" "$P/public/assets/link.txt"
-# D-002 (Nift Runtime 2.0): the @path invariant is retained; the status reason
-# is now "required output path now resolves outside the project" (previously
-# "page build metadata has an invalid requirement") and the rebuild fails with
-# the @path containment error.
+# Unrestricted cached requirements remain valid after retargeting.
 (cd "$P" && "$NIFT_BIN" status >status.log)
-grep -Fq 'required output path now resolves outside the project: public/assets/link.txt' "$P/status.log"
-if (cd "$P" && "$NIFT_BIN" build >rebuild.log 2>&1); then
-  echo "retargeted @path requirement unexpectedly rebuilt" >&2; exit 1
+grep -Fq 'up to date' "$P/status.log"
+(cd "$P" && "$NIFT_BIN" build >rebuild.log 2>&1)
+# Enabling explicit restriction must revalidate that same cached requirement.
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build >restricted.log 2>&1); then
+  echo 'explicit-root cached retarget unexpectedly succeeded: public/assets/link.txt' >&2; exit 1
 fi
-grep -Fq '@path path must stay inside the Nift project' "$P/rebuild.log"
+grep -Fq 'path escapes configured filesystem root' "$P/restricted.log"
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build --all >forced.log 2>&1); then
+  echo 'explicit-root forced retarget unexpectedly succeeded: public/assets/link.txt' >&2; exit 1
+fi
+grep -Fq 'path escapes configured filesystem root' "$P/forced.log"
 
 
 # The optimized metadata containment cache is parent-directory based. Retargeting
 # a directory symlink outside the project between invocations must still be
-# rejected, not just retargeting the final leaf symlink.
+# permitted by default and rejected with explicit root, like the leaf case.
 P="$TMP/retarget-parent"; mkproj "$P"
 mkdir -p "$P/public/inside-dir" "$TMP/outside-dir"
 printf 'inside\n' >"$P/public/inside-dir/file.txt"
@@ -79,12 +82,18 @@ printf '<a href="@path('"'"'public/linkdir/file.txt'"'"')">x</a>\n' >"$P/content
 (cd "$P" && "$NIFT_BIN" build --all >/dev/null)
 rm "$P/public/linkdir"
 ln -s "$TMP/outside-dir" "$P/public/linkdir"
-# D-002 (Nift Runtime 2.0): new status reason, same @path rebuild failure.
+# Unrestricted cached requirements remain valid after retargeting.
 (cd "$P" && "$NIFT_BIN" status >status.log)
-grep -Fq 'required output path now resolves outside the project: public/linkdir/file.txt' "$P/status.log"
-if (cd "$P" && "$NIFT_BIN" build >rebuild.log 2>&1); then
-  echo "retargeted @path parent requirement unexpectedly rebuilt" >&2; exit 1
+grep -Fq 'up to date' "$P/status.log"
+(cd "$P" && "$NIFT_BIN" build >rebuild.log 2>&1)
+# Enabling explicit restriction must revalidate that same cached requirement.
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build >restricted.log 2>&1); then
+  echo 'explicit-root cached retarget unexpectedly succeeded: public/linkdir/file.txt' >&2; exit 1
 fi
-grep -Fq '@path path must stay inside the Nift project' "$P/rebuild.log"
+grep -Fq 'path escapes configured filesystem root' "$P/restricted.log"
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build --all >forced.log 2>&1); then
+  echo 'explicit-root forced retarget unexpectedly succeeded: public/linkdir/file.txt' >&2; exit 1
+fi
+grep -Fq 'path escapes configured filesystem root' "$P/forced.log"
 
 echo "Metadata safety smoke test passed"

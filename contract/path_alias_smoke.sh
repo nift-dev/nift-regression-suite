@@ -49,14 +49,23 @@ rm "$P/public/assets/a file.txt"
 (cd "$P" && "$NIFT_BIN" status >status.log)
 test "$(grep -Fc 'required path missing: public/assets/a file.txt' "$P/status.log")" -eq 2
 
-# Each spelling reports its own source token while sharing the same failure.
+# Both spellings allow existing external targets by default; explicit root rejects.
+printf 'outside\n' >"$TMP/outside"
 printf "@path('../outside')\n" >"$P/content/canonical.html"
 printf "@pathto('../outside')\n" >"$P/content/legacy.html"
-if (cd "$P" && "$NIFT_BIN" build --all >canonical.log 2>&1); then
-  echo "path traversal unexpectedly succeeded" >&2
-  exit 1
+(cd "$P" && "$NIFT_BIN" build --all >canonical.log 2>&1)
+grep -Fq '../../outside' "$P/public/canonical.html"
+grep -Fq '../../outside' "$P/public/legacy.html"
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build --all >restricted.log 2>&1); then
+  echo 'explicit-root external aliases unexpectedly succeeded' >&2; exit 1
 fi
-grep -Fq '@path path must stay inside the Nift project' "$P/canonical.log"
-grep -Fq '@pathto path must stay inside the Nift project' "$P/canonical.log"
-
+grep -Fq 'path escapes configured filesystem root' "$P/restricted.log"
+printf "@path('../missing-outside')\n" >"$P/content/canonical.html"
+printf "@pathto('../missing-outside')\n" >"$P/content/legacy.html"
+if (cd "$P" && "$NIFT_BIN" build --all >missing.log 2>&1); then
+  echo 'missing external aliases unexpectedly succeeded' >&2; exit 1
+fi
+grep -Fq "@path" "$P/missing.log"
+grep -Fq '@pathto' "$P/missing.log"
+grep -Fq 'is neither a tracked name nor a file that exists' "$P/missing.log"
 echo "Path alias smoke test passed"

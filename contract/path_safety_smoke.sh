@@ -59,7 +59,7 @@ ok_build(){
 # D-002 (Nift Runtime 2.0): symlinks from inside the project to files outside it
 # follow normal OS semantics for @json data, schemas and @dep. (Previously: each
 # refused with "path must stay inside the Nift project".) The @path symlink
-# containment check below is retained.
+# explicit-root rejection below is retained.
 ok_build json-symlink '@json(x, "data/link.json")
 JSON=$[x.secret]'
 grep -Fq 'JSON=outside' "$P/public/index.html"
@@ -79,6 +79,11 @@ printf 'outside edited\n' >"$OUT/file.txt"
 (cd "$P" && "$NIFT_BIN" status >status.log 2>&1) || true
 grep -Fq 'dependency changed: data/dep-link.txt' "$P/status.log"
 
-fail_build pathto-symlink 'path must stay inside the Nift project' '@path("public/link.txt")'
+ok_build pathto-symlink '@path("public/link.txt")'
+grep -Fxq './link.txt' "$P/public/index.html"
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build --all >restricted.log 2>&1); then
+  echo 'explicit-root external symlink unexpectedly succeeded' >&2; exit 1
+fi
+grep -Fq 'path escapes configured filesystem root' "$P/restricted.log"
 
 echo "Path safety smoke test passed"

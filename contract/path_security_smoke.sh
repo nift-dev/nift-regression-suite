@@ -15,15 +15,19 @@ printf '\n' >"$P/content/index.html"
 printf 'outside\n' >"$TMP/outside.txt"
 
 printf '<a href="@path('"'"'../outside.txt'"'"')">escape</a>\n@content\n' >"$P/templates/template.html"
-if (cd "$P" && "$NIFT_BIN" build --all >log 2>&1); then
-  echo "@path traversal unexpectedly succeeded" >&2; exit 1
+(cd "$P" && "$NIFT_BIN" build --all >log 2>&1) || {
+  cat "$P/log" >&2; echo 'default external path unexpectedly rejected' >&2; exit 1;
+}
+grep -Fq '../../outside.txt' "$P/public/index.html"
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build --all >restricted.log 2>&1); then
+  echo 'explicit-root traversal unexpectedly succeeded' >&2; exit 1
 fi
-grep -Fq '@path path must stay inside the Nift project' "$P/log"
+grep -Fq 'path escapes configured filesystem root' "$P/restricted.log"
 
 # D-002 (Nift Runtime 2.0): @dep outside the project is no longer refused; the
 # external file is tracked like any dependency and an edit to it invalidates the
 # page. (Previously: "dep: path must stay inside the Nift project".) The @path
-# containment check above is retained.
+# explicit-root rejection above is retained.
 printf '@dep("../outside.txt")\nDEP-OK\n@content\n' >"$P/templates/template.html"
 (cd "$P" && "$NIFT_BIN" build --all >log 2>&1) || { cat "$P/log" >&2; echo "@dep outside the project failed to build" >&2; exit 1; }
 grep -Fq 'DEP-OK' "$P/public/index.html"

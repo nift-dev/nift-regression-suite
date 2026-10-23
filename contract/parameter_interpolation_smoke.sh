@@ -199,7 +199,7 @@ else pass; fi
 # D-002 (Nift Runtime 2.0): @dep is no longer confined, so an interpolated
 # external @dep path builds and is tracked exactly like a literal one
 # (previously: "dep: path must stay inside the Nift project"); @path keeps its
-# containment rule, so an interpolated external @path is still rejected. Kept as
+# explicit-root rule; default @path is unrestricted. Kept as
 # one check so the contract's check count is unchanged.
 P="$TMP/traversal"; make_project "$P"
 printf '{"path":"../outside.txt"}\n' >"$P/data/selector.json"
@@ -224,11 +224,15 @@ cat >"$P/templates/template.html" <<'EOF'
 <a href="@path($[selector.path])">x</a>
 @content
 EOF
-if (cd "$P" && "$NIFT_BIN" build --all >build.log 2>&1) \
-   || ! grep -Fq '@path path must stay inside the Nift project' "$P/build.log"; then
+if ! (cd "$P" && "$NIFT_BIN" build --all >build.log 2>&1) \
+   || ! grep -Fq '../../outside.txt' "$P/public/index.html"; then
   traversal_ok=0; sed -n '1,80p' "$P/build.log" >&2
 fi
-if (( traversal_ok )); then pass; else fail 'interpolated traversal follows the outer operation (external @dep tracked, @path contained)'; fi
+if (cd "$P" && NIFT_FS_ROOT="$P" "$NIFT_BIN" build --all >restricted.log 2>&1) \
+   || ! grep -Fq 'path escapes configured filesystem root' "$P/restricted.log"; then
+  traversal_ok=0; sed -n '1,80p' "$P/restricted.log" >&2
+fi
+if (( traversal_ok )); then pass; else fail 'interpolated external paths allowed by default, dependencies tracked, explicit-root enforced'; fi
 
 # Dynamic dependency sets are replaced after a successful A -> B transition in
 # all incremental modes. The selector and current target matter; stale A does not.
