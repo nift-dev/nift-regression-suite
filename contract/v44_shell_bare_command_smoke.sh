@@ -25,7 +25,7 @@ out=$(printf 'fixtool := "shadowed"\nfixtool\n' | "$NIFT_ABS" 2>/dev/null)
 grep -q '"shadowed"' <<<"$out" || { echo "$out" >&2; exit 1; }
 # nonexistent command is reported
 out=$(printf 'nonexistentcmdxyz\n' | "$NIFT_ABS" 2>&1)
-grep -q 'command not found: nonexistentcmdxyz' <<<"$out" || { echo "$out" >&2; exit 1; }
+grep -Fxq 'error: nift: nonexistentcmdxyz: command not found' <<<"$out" || { echo "$out" >&2; exit 1; }
 # --no-process rejects the external fallback
 if printf 'fixtool\n' | PATH="$t/bin:$PATH" NIFT_NO_PROCESS=1 "$NIFT_ABS" 2>/dev/null | grep -q 'fixtool-ran'; then echo "ran under --no-process" >&2; exit 1; fi
 # script-land command-style (word + args) resolves on PATH
