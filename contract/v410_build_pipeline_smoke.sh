@@ -18,6 +18,14 @@ with tempfile.TemporaryDirectory(prefix='nrs-v410-pipeline-') as tmp:
  track();(p/'content/producer.html').write_text('placeholder');(p/'content/consumer.html').write_text('@input("public/producer.html")')
  (p/'produce.f').write_text('f := file(getenv("NIFT_HOOK_OUTPUT"))\nf.open("w")\nf.write("generated")\nf.save()\nf.close()\n')
  run('build','consumer');assert (p/'public/consumer.html').read_text()=='generated'
+ # Modified mode (v4.12, kept by Runtime 2.0 D-050) rebuilds a page when a dependency's mtime is
+ # >= its page-info mtime: a tie in one coarse timestamp tick is treated as possibly changed.
+ # A no-op therefore requires every input to be strictly older than every page-info. Establish
+ # that precondition explicitly (no sleep), then require the no-op.
+ infos=[f for f in (p/'.nift').rglob('*.info.json')];oldest=min(f.stat().st_mtime_ns for f in infos)
+ for f in p.rglob('*'):
+  if f.is_file() and '.nift' not in f.relative_to(p).parts and f.stat().st_mtime_ns>=oldest:os.utime(f,ns=(oldest-10**9,oldest-10**9))
+ assert all(f.stat().st_mtime_ns<oldest for f in p.rglob('*') if f.is_file() and '.nift' not in f.relative_to(p).parts)
  before=(p/'.nift/public/consumer.info.json').stat().st_mtime_ns;run('build');assert (p/'.nift/public/consumer.info.json').stat().st_mtime_ns==before
  (p/'produce.f').write_text((p/'produce.f').read_text().replace('generated','updated'));run('build');assert (p/'public/consumer.html').read_text()=='updated'
  snapshot={str(f.relative_to(p)):f.read_bytes() for f in p.rglob('*') if f.is_file()}
