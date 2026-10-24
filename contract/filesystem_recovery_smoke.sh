@@ -31,6 +31,20 @@ try:
         if proc.poll() is not None: raise SystemExit('build --auto exited before initial write pass')
         raise SystemExit('build --auto did not complete initial write pass')
 
+    # Modified mode (v4.12 rule, kept by Runtime 2.0) treats an input whose mtime is >= its
+    # page-info mtime as changed, so on coarse-timestamp kernels the idle loop may run one more
+    # (legitimate) pass right after the first. "Idle" therefore requires every input to be
+    # strictly older than the page-info: wait for the pass to record it, establish that
+    # precondition explicitly (no sleep-and-hope), then plant the stale temp.
+    info=root/'.nift/public/index.info.json'; deadline=time.monotonic()+8
+    while time.monotonic()<deadline and not (info.exists() and info.stat().st_mtime_ns>=(root/'content/index.html').stat().st_mtime_ns):
+        time.sleep(.05)
+    if not info.exists(): raise SystemExit('page-info was not recorded by the initial write pass')
+    time.sleep(.3)
+    recorded=info.stat().st_mtime_ns
+    for f in (root/'content/index.html', root/'templates/template.html'):
+        if f.stat().st_mtime_ns>=recorded: os.utime(f, ns=(recorded-10**9, recorded-10**9))
+    assert all(f.stat().st_mtime_ns<recorded for f in (root/'content/index.html', root/'templates/template.html'))
     stale=root/'public/mid-session.html.nift-tmp-99999999-101'
     stale.write_text('stale\n')
     time.sleep(.35)
